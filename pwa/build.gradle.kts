@@ -11,6 +11,11 @@ powerAssert {
 }
 
 kotlin {
+    jvm {
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
     js(IR) {
         browser {
             commonWebpackConfig {
@@ -21,20 +26,33 @@ kotlin {
     }
 
     sourceSets {
-        val jsMain by getting {
+        val commonMain by getting {
             dependencies {
                 implementation(project(":shared"))
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                implementation(compose.runtime)
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation("io.kotest:kotest-runner-junit5:5.8.1")
+                implementation("io.kotest:kotest-assertions-core:5.8.1")
+            }
+        }
+        val jsMain by getting {
+            dependencies {
                 implementation(compose.html.core)
                 implementation(compose.runtime)
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
             }
         }
         val jsTest by getting {
             dependencies {
                 implementation(kotlin("test-js"))
-                implementation("io.kotest:kotest-assertions-core:5.8.1")
-                implementation("io.kotest:kotest-framework-engine:5.8.1")
             }
         }
     }
