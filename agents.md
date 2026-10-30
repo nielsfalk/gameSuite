@@ -19,7 +19,7 @@ promts:
  - ...
  
 Co-authored-by: Junie <junie@jetbrains.com>
-Co-authored-by: Gemini 3.7 Flash Medium <Gemini3.7FlashMedium@google.com>
+Co-authored-by: GLM-5.2 <glm-5.2@z.ai>
 ```
 
 ## Guidelines
@@ -27,3 +27,4 @@ Co-authored-by: Gemini 3.7 Flash Medium <Gemini3.7FlashMedium@google.com>
 - Commits should be small.
 - Multiple commits with the same task number are welcome.
 - A task can be modified and unchecked again in `README.md`.
+- The **model** coauthor must be the model actually powering the agent for that commit (e.g. `Co-authored-by: GLM-5.2 <glm-5.2@z.ai>`). Do not copy a model name from the example or another commit — use the real model.
