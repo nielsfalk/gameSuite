@@ -33,6 +33,7 @@ while read -r _ local_sha _ _; do
       exit 1
     fi
 
+    declare -A seen=()
     while IFS= read -r coauthor; do
       coauthor="${coauthor# }"
       coauthor="${coauthor% }"
@@ -40,6 +41,11 @@ while read -r _ local_sha _ _; do
         echo "pre-push: commit ${commit_sha} author and coauthor are the same (${author_identity}) — push aborted." >&2
         exit 1
       fi
+      if [ -n "${seen[$coauthor]+x}" ]; then
+        echo "pre-push: commit ${commit_sha} has duplicate coauthor (${coauthor}) — push aborted." >&2
+        exit 1
+      fi
+      seen["$coauthor"]=1
     done <<< "$coauthors"
   done < <(git rev-list "${local_sha}" --not --all)
 done

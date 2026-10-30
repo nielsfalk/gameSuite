@@ -31,3 +31,4 @@ Co-authored-by: GLM-5.2 <glm-5.2@z.ai>
 - A task can be modified and unchecked again in `README.md`.
 - The **model** coauthor must be the model actually powering the agent for that commit (e.g. `Co-authored-by: GLM-5.2 <glm-5.2@z.ai>`). Do not copy a model name from the example or another commit — use the real model.
 - The commit author follows the git default (whatever the configured git user is); do not override it.
+- Coauthors must be **unique** — never list the same coauthor twice in a commit (e.g. do not pass `--trailer` flags that duplicate coauthors already present in the message body). The pre-push hook rejects commits with duplicate coauthors.
