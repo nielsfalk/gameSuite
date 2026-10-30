@@ -26,7 +26,7 @@ Gamesuite is a multi-module Kotlin game platform.
 
 - [x] [T01] Project initialization: MIT License, agents.md commit guidelines, gitignore
 - [x] [T02] Multi-module Gradle Kotlin DSL configuration & wrapper setup
-- [ ] [T03] Shared module: Game logic models, sealed stage classes, and Kotest FreeSpec data-driven smoketests
+- [x] [T03] Shared module: Game logic models, sealed stage classes, and Kotest FreeSpec data-driven smoketests
 - [ ] [T04] Server module: Ktor server with PostgreSQL support, score CRUD endpoints, and Kotest FreeSpec smoketests
 - [ ] [T05] PWA module: Compose HTML PWA with deep linking, local storage score caching/syncing, and Kotest FreeSpec smoketests
 - [ ] [T06] Smoke verification and end-to-end build test across all modules
