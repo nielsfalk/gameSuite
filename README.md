@@ -31,8 +31,8 @@ Gamesuite is a multi-module Kotlin game platform.
 - [x] [T04] Server module: Ktor server with PostgreSQL support, score CRUD endpoints, and Kotest FreeSpec smoketests
 - [x] [T05] PWA module: Compose HTML PWA with deep linking, local storage score caching/syncing, and Kotest FreeSpec smoketests
 - [x] [T06] Smoke verification and end-to-end build test across all modules
-- [ ] [T07] Lollipop design: fat font, round edges, dark background, and popping colors for the PWA
-- [ ] [T08] Pre-push git hook: runs all tests across all modules and verifies that commit author and coauthors differ; installable via a Gradle task
+- [x] [T07] Lollipop design: fat font, round edges, dark background, and popping colors for the PWA
+- [x] [T08] Pre-push git hook: runs all tests across all modules and verifies that commit author and coauthors differ; installable via a Gradle task
 
 ## License
 
