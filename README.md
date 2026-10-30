@@ -1,0 +1,36 @@
+# Gamesuite
+
+Gamesuite is a multi-module Kotlin game platform.
+
+## Architecture & Modules
+
+- **`shared`**: Game logic, data models, sealed game stage definitions (`de.nielsfalk.game.suite.$gamename` / `de.nielsfalk.game.suite.common`).
+- **`server`**: Ktor backend with PostgreSQL database for score/highscore CRUD APIs:
+  - Route: `/{username}/{gameName}/{stage}/{levelId}`
+  - Scores can be posted without authentication
+  - Scores contain time and signed points
+- **`pwa`**: Kotlin Compose HTML Progressive Web App (hosted on GitHub Pages):
+  - Deep links: `/{username}/{stage}/{gameName}/{levelId}`
+  - If no deep link but username in `localStorage`, forwards to `/{username}`
+  - If no deep link and no username in `localStorage`, prompts for username
+  - Packages: `de.nielsfalk.game.suite.$gamename`, `de.nielsfalk.game.suite.common`, or `de.nielsfalk.game.suite.navigation`
+  - Highscore summary display
+  - Local storage offline caching and resilient background server synchronization (does not fail when server is unreachable)
+
+## Testing Strategy
+
+- Tests use **Kotest FreeSpec** and **data-driven testing** (`withData` / `table` / `forAll`).
+- Smoke test coverage across all modules.
+
+## Setup Tasks
+
+- [x] [T01] Project initialization: MIT License, agents.md commit guidelines, gitignore
+- [x] [T02] Multi-module Gradle Kotlin DSL configuration & wrapper setup
+- [ ] [T03] Shared module: Game logic models, sealed stage classes, and Kotest FreeSpec data-driven smoketests
+- [ ] [T04] Server module: Ktor server with PostgreSQL support, score CRUD endpoints, and Kotest FreeSpec smoketests
+- [ ] [T05] PWA module: Compose HTML PWA with deep linking, local storage score caching/syncing, and Kotest FreeSpec smoketests
+- [ ] [T06] Smoke verification and end-to-end build test across all modules
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
