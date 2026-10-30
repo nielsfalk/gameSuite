@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Pre-push hook: runs all tests across all modules and verifies that the
+# commit author and coauthors are different for every commit being pushed.
+#
+# Installed by the Gradle task `installPrePushHook`.
+
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+# --- 1. Run all tests across all modules -------------------------------------
+echo "pre-push: running all tests across all modules ..."
+if ! (cd "$repo_root" && ./gradlew --quiet clean test); then
+  echo "pre-push: tests failed — push aborted." >&2
+  exit 1
+fi
+echo "pre-push: all tests passed."
+
+# --- 2. Verify author and coauthors differ for each pushed commit -------------
+# Lines on stdin are: "<local ref> <local sha> <remote ref> <remote sha>"
+while read -r _ local_sha _ _; do
+  # Iterate over every commit that is new to the remote.
+  while read -r commit_sha; do
+    author_name="$(git show -s --format='%an' "$commit_sha")"
+    author_email="$(git show -s --format='%ae' "$commit_sha")"
+    author_identity="${author_name} <${author_email}>"
+
+    # Collect all Co-authored-by trailers.
+    coauthors="$(git show -s --format='%(trailers:key=Co-authored-by,valueonly)' "$commit_sha" | sed '/^$/d')"
+
+    if [ -z "$coauthors" ]; then
+      echo "pre-push: commit ${commit_sha} has no Co-authored-by trailers — push aborted." >&2
+      exit 1
+    fi
+
+    while IFS= read -r coauthor; do
+      coauthor="${coauthor# }"
+      coauthor="${coauthor% }"
+      if [ "$coauthor" = "$author_identity" ]; then
+        echo "pre-push: commit ${commit_sha} author and coauthor are the same (${author_identity}) — push aborted." >&2
+        exit 1
+      fi
+    done <<< "$coauthors"
+  done < <(git rev-list "${local_sha}" --not --all)
+done
+
+echo "pre-push: author/coauthor checks passed."
+exit 0

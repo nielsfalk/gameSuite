@@ -13,3 +13,16 @@ allprojects {
     group = "de.nielsfalk.game.suite"
     version = "1.0.0-SNAPSHOT"
 }
+
+tasks.register("installPrePushHook") {
+    group = "verification"
+    description = "Installs the pre-push git hook that runs all tests and checks author/coauthor differences."
+    doLast {
+        val source = layout.projectDirectory.file("git-hooks/pre-push").asFile
+        val target = layout.projectDirectory.file(".git/hooks/pre-push").asFile
+        target.parentFile.mkdirs()
+        source.copyTo(target, overwrite = true)
+        target.setExecutable(true)
+        logger.lifecycle("Installed pre-push hook to ${target.relativeTo(rootDir)}.")
+    }
+}
