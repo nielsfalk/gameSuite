@@ -3,10 +3,6 @@ package de.nielsfalk.game.suite.common
 import de.nielsfalk.game.suite.common.Game
 import de.nielsfalk.game.suite.common.Stage
 import io.kotest.core.spec.style.FreeSpec
-import io.kotest.datatest.withData
-import io.kotest.matchers.comparables.shouldBeGreaterThan
-import io.kotest.matchers.comparables.shouldBeLessThan
-import io.kotest.matchers.shouldBe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -23,21 +19,27 @@ class SharedSmokeTest : FreeSpec({
             )
             val json = Json.encodeToString(score)
             val decoded = Json.decodeFromString<Score>(json)
-            decoded shouldBe score
+            assert(decoded == score)
+            assert(decoded.username == "player1")
+            assert(decoded.points == 150L)
         }
 
-        "should evaluate game stages using data-driven testing" - {
+        "should evaluate game stages using data table" - {
             data class StageTestData(val stageName: String, val expectedStage: Stage, val expectedMultiplier: Int)
 
-            withData(
+            val stageData = listOf(
                 StageTestData("easy", Stage.Easy, 1),
                 StageTestData("medium", Stage.Medium, 2),
                 StageTestData("hard", Stage.Hard, 3)
-            ) { (stageName, expectedStage, expectedMultiplier) ->
-                val parsed = Stage.fromString(stageName)
-                parsed shouldBe expectedStage
-                parsed.multiplier shouldBe expectedMultiplier
-                parsed.name shouldBe stageName
+            )
+
+            stageData.forEach { (stageName, expectedStage, expectedMultiplier) ->
+                "stage '$stageName' maps to $expectedStage with multiplier $expectedMultiplier" {
+                    val parsed = Stage.fromString(stageName)
+                    assert(parsed == expectedStage)
+                    assert(parsed.multiplier == expectedMultiplier)
+                    assert(parsed.name == stageName)
+                }
             }
         }
 
@@ -50,18 +52,22 @@ class SharedSmokeTest : FreeSpec({
                 val expectedPositive: Boolean
             )
 
-            withData(
+            val scoreRows = listOf(
                 ScoreCalculationRow(Stage.Easy, true, 4, 10, true),
                 ScoreCalculationRow(Stage.Hard, true, 3, 5, true),
                 ScoreCalculationRow(Stage.Easy, false, 5, 20, false),
                 ScoreCalculationRow(Stage.Hard, false, 9, 50, false)
-            ) { (stage, isWin, moves, timeTaken, expectedPositive) ->
-                val game = Game(stage = stage)
-                val points = game.calculatePoints(isWin, moves, timeTaken)
-                if (expectedPositive) {
-                    points shouldBeGreaterThan 0L
-                } else {
-                    points shouldBeLessThan 0L
+            )
+
+            scoreRows.forEach { (stage, isWin, moves, timeTaken, expectedPositive) ->
+                "scoring for ${stage.name} with win=$isWin moves=$moves" {
+                    val game = Game(stage = stage)
+                    val points = game.calculatePoints(isWin, moves, timeTaken)
+                    if (expectedPositive) {
+                        assert(points > 0L)
+                    } else {
+                        assert(points < 0L)
+                    }
                 }
             }
         }

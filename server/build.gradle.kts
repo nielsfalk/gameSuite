@@ -1,11 +1,16 @@
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
+    kotlin("plugin.power-assert")
     application
 }
 
 application {
     mainClass.set("de.nielsfalk.game.suite.server.ApplicationKt")
+}
+
+powerAssert {
+    functions = listOf("kotlin.assert", "kotlin.test.assertTrue", "kotlin.test.assertEquals", "kotlin.test.assertNull")
 }
 
 dependencies {
@@ -35,8 +40,9 @@ dependencies {
     // Testing
     testImplementation("io.kotest:kotest-runner-junit5:5.8.1")
     testImplementation("io.kotest:kotest-assertions-core:5.8.1")
-    testImplementation("io.kotest:kotest-framework-datatest:5.8.1")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
+    testImplementation("io.ktor:ktor-client-content-negotiation-jvm:$ktorVersion")
+    testImplementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
 }
 
 tasks.withType<Test> {

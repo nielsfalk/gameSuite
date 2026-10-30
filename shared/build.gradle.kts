@@ -1,6 +1,11 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    kotlin("plugin.power-assert")
+}
+
+powerAssert {
+    functions = listOf("kotlin.assert", "kotlin.test.assertTrue", "kotlin.test.assertEquals", "kotlin.test.assertNull")
 }
 
 kotlin {
@@ -31,7 +36,6 @@ kotlin {
             dependencies {
                 implementation("io.kotest:kotest-assertions-core:5.8.1")
                 implementation("io.kotest:kotest-framework-engine:5.8.1")
-                implementation("io.kotest:kotest-framework-datatest:5.8.1")
             }
         }
         val jvmTest by getting {
