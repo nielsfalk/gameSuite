@@ -38,7 +38,7 @@ Gamesuite is a multi-module Kotlin game platform.
 - [x] [T11] Shared module: Minesweeper game with serializable stages — easy, beginner, and expert presets plus a custom stage with parameters (width, height, mine count)
 - [x] [T12] Server module: always validate that gameName and stage exist before accepting score requests (unknown games/stages are rejected)
 - [x] [T13] PWA module: Minesweeper gameplay with stage selection (easy, beginner, expert, custom) using the shared SquareGrid and stages
-- [ ] [T14] PWA module: UserHome logout button clears the stored username from localStorage (keeping local scores) and returns to the username prompt at `/`
+- [x] [T14] PWA module: UserHome logout button clears the stored username from localStorage (keeping local scores) and returns to the username prompt at `/`
 - [ ] [T15] Shared module: `Grid<T>` interface (width/height, bounds, get/set, neighbors) implemented by `SquareGrid` and a new `HexGrid` using odd-r offset coordinates (pointy-top hexes on a rectangular board)
 - [ ] [T16] PWA module: CSS confetti-burst winning animation (~2s, non-blocking, respects `prefers-reduced-motion`) when a Minesweeper game is cleared
 
