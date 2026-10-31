@@ -48,26 +48,26 @@ fun AppView(
         }
     }
 
-    Div({ style { property("cssText", LollipopTheme.rootContainer()) } }) {
-        H1({ style { property("cssText", LollipopTheme.title()) } }) { Text("Gamesuite") }
+    Div({ style { lollipopRoot() } }) {
+        H1({ style { lollipopTitle() } }) { Text("Gamesuite") }
 
         when (val route = currentRoute) {
             is AppRoute.AskUsername -> {
-                Div({ style { property("cssText", LollipopTheme.card()) } }) {
-                    H2({ style { property("cssText", LollipopTheme.heading()) } }) { Text("Welcome to Gamesuite!") }
-                    P({ style { property("cssText", LollipopTheme.paragraph()) } }) { Text("Please choose a username to continue:") }
+                Div({ style { lollipopCard() } }) {
+                    H2({ style { lollipopHeading() } }) { Text("Welcome to Gamesuite!") }
+                    P({ style { lollipopParagraph() } }) { Text("Please choose a username to continue:") }
 
                     Input(type = InputType.Text) {
                         placeholder("Enter your username")
                         value(inputUsername)
                         onInput { inputUsername = it.value }
-                        style { property("cssText", LollipopTheme.input()) }
+                        style { lollipopInput() }
                     }
 
                     Span({ style { property("display", "block"); property("height", "1rem") } })
 
                     Button({
-                        style { property("cssText", LollipopTheme.button()) }
+                        style { lollipopButton() }
                         onClick {
                             if (inputUsername.isNotBlank()) {
                                 storageService.setUsername(inputUsername.trim())
@@ -81,14 +81,14 @@ fun AppView(
             }
 
             is AppRoute.UserHome -> {
-                Div({ style { property("cssText", LollipopTheme.card()) } }) {
-                    H2({ style { property("cssText", LollipopTheme.heading()) } }) { Text("Hello, ${route.username}!") }
-                    P({ style { property("cssText", LollipopTheme.paragraph()) } }) { Text("Select game options to jump into a game level:") }
+                Div({ style { lollipopCard() } }) {
+                    H2({ style { lollipopHeading() } }) { Text("Hello, ${route.username}!") }
+                    P({ style { lollipopParagraph() } }) { Text("Select game options to jump into a game level:") }
 
                     Div({ style { property("margin-bottom", "1rem") } }) {
-                        Span({ style { property("cssText", LollipopTheme.pill()) } }) { Text("Stage") }
+                        Span({ style { lollipopPill() } }) { Text("Stage") }
                         Select({
-                            style { property("cssText", LollipopTheme.input()) }
+                            style { lollipopInput() }
                             onChange { it.value?.let { stage -> selectedStage = stage } }
                         }) {
                             Option("easy") { Text("Easy") }
@@ -97,16 +97,16 @@ fun AppView(
                         }
 
                         Span({ style { property("display", "inline-block"); property("width", "1rem") } })
-                        Span({ style { property("cssText", LollipopTheme.pill()) } }) { Text("Level") }
+                        Span({ style { lollipopPill() } }) { Text("Level") }
                         Input(type = InputType.Text) {
                             value(selectedLevel)
                             onInput { selectedLevel = it.value }
-                            style { property("cssText", LollipopTheme.input()) }
+                            style { lollipopInput() }
                         }
 
                         Span({ style { property("display", "block"); property("height", "1rem") } })
                         Button({
-                            style { property("cssText", LollipopTheme.button()) }
+                            style { lollipopButton() }
                             onClick {
                                 navigateTo(
                                     AppRoute.GameDeepLink(
@@ -122,14 +122,14 @@ fun AppView(
                         }
                     }
 
-                    H3({ style { property("cssText", LollipopTheme.subheading()) } }) { Text("Your Recent Local Scores") }
+                    H3({ style { lollipopSubheading() } }) { Text("Your Recent Local Scores") }
                     val scores = storageService.getLocalScores().filter { it.username == route.username }
                     if (scores.isEmpty()) {
-                        P({ style { property("cssText", LollipopTheme.paragraph()) } }) { Text("No scores recorded yet for ${route.username}.") }
+                        P({ style { lollipopParagraph() } }) { Text("No scores recorded yet for ${route.username}.") }
                     } else {
                         Ul {
                             scores.forEach { score ->
-                                Li({ style { property("cssText", LollipopTheme.scoreRow()) } }) {
+                                Li({ style { lollipopScoreRow() } }) {
                                     Text("${score.gameName} · Stage: ${score.stage} · Level: ${score.levelId} · Points: ${score.points}")
                                 }
                             }
@@ -139,24 +139,24 @@ fun AppView(
             }
 
             is AppRoute.GameDeepLink -> {
-                Div({ style { property("cssText", LollipopTheme.card()) } }) {
-                    H2({ style { property("cssText", LollipopTheme.heading()) } }) { Text("${route.gameName} Game") }
-                    P({ style { property("cssText", LollipopTheme.paragraph()) } }) {
-                        Span({ style { property("cssText", LollipopTheme.pill()) } }) { Text("Player: ${route.username}") }
-                        Span({ style { property("cssText", LollipopTheme.pill()) } }) { Text("Stage: ${route.stage}") }
-                        Span({ style { property("cssText", LollipopTheme.pill()) } }) { Text("Level: ${route.levelId}") }
+                Div({ style { lollipopCard() } }) {
+                    H2({ style { lollipopHeading() } }) { Text("${route.gameName} Game") }
+                    P({ style { lollipopParagraph() } }) {
+                        Span({ style { lollipopPill() } }) { Text("Player: ${route.username}") }
+                        Span({ style { lollipopPill() } }) { Text("Stage: ${route.stage}") }
+                        Span({ style { lollipopPill() } }) { Text("Level: ${route.levelId}") }
                     }
-                    P({ style { property("cssText", LollipopTheme.paragraph()) } }) { Text("No game implemented yet for this level.") }
+                    P({ style { lollipopParagraph() } }) { Text("No game implemented yet for this level.") }
 
-                    H3({ style { property("cssText", LollipopTheme.subheading()) } }) { Text("Your Highscore Summary") }
+                    H3({ style { lollipopSubheading() } }) { Text("Your Highscore Summary") }
                     val scores = storageService.getLocalScores()
                         .filter { it.username == route.username && it.gameName == route.gameName }
                     if (scores.isEmpty()) {
-                        P({ style { property("cssText", LollipopTheme.paragraph()) } }) { Text("No scores recorded yet for ${route.username}.") }
+                        P({ style { lollipopParagraph() } }) { Text("No scores recorded yet for ${route.username}.") }
                     } else {
                         Ul {
                             scores.sortedByDescending { it.points }.forEach { score ->
-                                Li({ style { property("cssText", LollipopTheme.scoreRow()) } }) {
+                                Li({ style { lollipopScoreRow() } }) {
                                     Text("Stage: ${score.stage} · Level: ${score.levelId} · Points: ${score.points}")
                                 }
                             }
@@ -164,7 +164,7 @@ fun AppView(
                     }
 
                     Button({
-                        style { property("cssText", LollipopTheme.buttonSecondary()) }
+                        style { lollipopButtonSecondary() }
                         onClick { navigateTo(AppRoute.UserHome(route.username)) }
                     }) {
                         Text("Back to Home")

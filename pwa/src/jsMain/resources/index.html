@@ -12,9 +12,42 @@
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         html, body { margin: 0; padding: 0; background: #12122b; }
-        body { font-family: 'Baloo 2', 'Segoe UI', system-ui, sans-serif; }
-        #root { padding: 1rem; }
+        body {
+            font-family: 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background:
+                radial-gradient(circle at 85% 10%, rgba(179, 136, 255, 0.22) 0%, transparent 45%),
+                radial-gradient(circle at 10% 85%, rgba(77, 208, 255, 0.18) 0%, transparent 45%),
+                #12122b;
+            background-attachment: fixed;
+        }
+        #root { padding: 0; }
         input, select, button { font-family: inherit; }
+        ::placeholder { color: #9a9ac9; opacity: 1; }
+        ::selection { background: #ff4d8d; color: #fff; }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ffd23f !important;
+            box-shadow: 0 0 0 4px rgba(255, 210, 63, 0.25) !important;
+        }
+        button:hover { filter: brightness(1.12); transform: translateY(-1px); }
+        button:active { transform: translateY(2px); filter: brightness(0.95); }
+        @media (prefers-reduced-motion: no-preference) {
+            #root > div > h1 {
+                animation: lollipop-shimmer 6s ease-in-out infinite alternate;
+            }
+            #root > div > div {
+                animation: lollipop-pop 0.35s ease-out both;
+            }
+        }
+        @keyframes lollipop-shimmer {
+            from { filter: drop-shadow(0 2px 10px rgba(255, 77, 141, 0.45)); }
+            to { filter: drop-shadow(0 2px 18px rgba(77, 208, 255, 0.65)); }
+        }
+        @keyframes lollipop-pop {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
     </style>
 </head>
 <body>
