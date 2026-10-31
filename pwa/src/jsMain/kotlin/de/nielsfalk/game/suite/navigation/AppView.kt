@@ -7,6 +7,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.nielsfalk.game.suite.common.ScoreStorageService
 import de.nielsfalk.game.suite.common.ScoreSyncService
+import de.nielsfalk.game.suite.minesweeper.MinesweeperStage
+import de.nielsfalk.game.suite.minesweeper.MinesweeperView
 import kotlinx.browser.window
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
@@ -23,6 +25,7 @@ import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.Ul
+import kotlin.random.Random
 
 @Composable
 fun AppView(
@@ -36,8 +39,10 @@ fun AppView(
     }
 
     var inputUsername by remember { mutableStateOf("") }
-    var selectedStage by remember { mutableStateOf("easy") }
-    var selectedLevel by remember { mutableStateOf("1") }
+    var selectedStage by remember { mutableStateOf(MinesweeperStage.Easy.name) }
+    var customWidth by remember { mutableStateOf("12") }
+    var customHeight by remember { mutableStateOf("12") }
+    var customMines by remember { mutableStateOf("20") }
 
     fun navigateTo(route: AppRoute) {
         currentRoute = route
@@ -46,6 +51,21 @@ fun AppView(
             window.history.pushState(null, "", path)
         } catch (_: Throwable) {
         }
+    }
+
+    fun parseSelectedStage(): MinesweeperStage? = if (selectedStage == "custom") {
+        val width = customWidth.toIntOrNull()
+        val height = customHeight.toIntOrNull()
+        val mines = customMines.toIntOrNull()
+        if (width == null || height == null || mines == null) {
+            null
+        } else {
+            runCatching {
+                MinesweeperStage.Custom(width = width, height = height, mines = mines)
+            }.getOrNull()
+        }
+    } else {
+        MinesweeperStage.parse(selectedStage)
     }
 
     Div({ style { lollipopRoot() } }) {
@@ -81,9 +101,11 @@ fun AppView(
             }
 
             is AppRoute.UserHome -> {
+                val parsedStage = parseSelectedStage()
+
                 Div({ style { lollipopCard() } }) {
                     H2({ style { lollipopHeading() } }) { Text("Hello, ${route.username}!") }
-                    P({ style { lollipopParagraph() } }) { Text("Select game options to jump into a game level:") }
+                    P({ style { lollipopParagraph() } }) { Text("Choose a Minesweeper stage to jump into a game:") }
 
                     Div({ style { property("margin-bottom", "1rem") } }) {
                         Span({ style { lollipopPill() } }) { Text("Stage") }
@@ -91,34 +113,62 @@ fun AppView(
                             style { lollipopInput() }
                             onChange { it.value?.let { stage -> selectedStage = stage } }
                         }) {
-                            Option("easy") { Text("Easy") }
-                            Option("medium") { Text("Medium") }
-                            Option("hard") { Text("Hard") }
+                            Option(MinesweeperStage.Easy.name) { Text("Easy") }
+                            Option(MinesweeperStage.Beginner.name) { Text("Beginner") }
+                            Option(MinesweeperStage.Expert.name) { Text("Expert") }
+                            Option("custom") { Text("Custom") }
                         }
 
-                        Span({ style { property("display", "inline-block"); property("width", "1rem") } })
-                        Span({ style { lollipopPill() } }) { Text("Level") }
-                        Input(type = InputType.Text) {
-                            value(selectedLevel)
-                            onInput { selectedLevel = it.value }
-                            style { lollipopInput() }
+                        if (selectedStage == "custom") {
+                            Div({ style { property("margin-top", "0.75rem") } }) {
+                                Span({ style { lollipopPill() } }) { Text("Width") }
+                                Input(type = InputType.Text) {
+                                    value(customWidth)
+                                    onInput { customWidth = it.value }
+                                    style { lollipopInput() }
+                                }
+
+                                Span({ style { lollipopPill() } }) { Text("Height") }
+                                Input(type = InputType.Text) {
+                                    value(customHeight)
+                                    onInput { customHeight = it.value }
+                                    style { lollipopInput() }
+                                }
+
+                                Span({ style { lollipopPill() } }) { Text("Mines") }
+                                Input(type = InputType.Text) {
+                                    value(customMines)
+                                    onInput { customMines = it.value }
+                                    style { lollipopInput() }
+                                }
+                            }
+                            P({ style { lollipopParagraph() } }) {
+                                Text("Width and height must be 5–30; mines must leave room for a safe first click.")
+                            }
                         }
 
                         Span({ style { property("display", "block"); property("height", "1rem") } })
                         Button({
                             style { lollipopButton() }
                             onClick {
+                                val stage = parsedStage ?: return@onClick
                                 navigateTo(
                                     AppRoute.GameDeepLink(
                                         username = route.username,
-                                        stage = selectedStage,
-                                        gameName = "game",
-                                        levelId = selectedLevel
+                                        stage = stage.name,
+                                        gameName = "minesweeper",
+                                        levelId = Random.nextLong().toString()
                                     )
                                 )
                             }
                         }) {
                             Text("Launch Game")
+                        }
+
+                        if (parsedStage == null) {
+                            P({ style { lollipopParagraph() } }) {
+                                Text("Please enter a valid custom stage before launching.")
+                            }
                         }
                     }
 
@@ -139,35 +189,57 @@ fun AppView(
             }
 
             is AppRoute.GameDeepLink -> {
-                Div({ style { lollipopCard() } }) {
-                    H2({ style { lollipopHeading() } }) { Text("${route.gameName} Game") }
-                    P({ style { lollipopParagraph() } }) {
-                        Span({ style { lollipopPill() } }) { Text("Player: ${route.username}") }
-                        Span({ style { lollipopPill() } }) { Text("Stage: ${route.stage}") }
-                        Span({ style { lollipopPill() } }) { Text("Level: ${route.levelId}") }
-                    }
-                    P({ style { lollipopParagraph() } }) { Text("No game implemented yet for this level.") }
-
-                    H3({ style { lollipopSubheading() } }) { Text("Your Highscore Summary") }
-                    val scores = storageService.getLocalScores()
-                        .filter { it.username == route.username && it.gameName == route.gameName }
-                    if (scores.isEmpty()) {
-                        P({ style { lollipopParagraph() } }) { Text("No scores recorded yet for ${route.username}.") }
-                    } else {
-                        Ul {
-                            scores.sortedByDescending { it.points }.forEach { score ->
-                                Li({ style { lollipopScoreRow() } }) {
-                                    Text("Stage: ${score.stage} · Level: ${score.levelId} · Points: ${score.points}")
-                                }
+                if (route.gameName == "minesweeper") {
+                    val stage = MinesweeperStage.parse(route.stage)
+                    if (stage == null) {
+                        Div({ style { lollipopCard() } }) {
+                            H2({ style { lollipopHeading() } }) { Text("Unknown stage") }
+                            P({ style { lollipopParagraph() } }) {
+                                Text("'${route.stage}' is not a valid Minesweeper stage.")
+                            }
+                            Button({
+                                style { lollipopButtonSecondary() }
+                                onClick { navigateTo(AppRoute.UserHome(route.username)) }
+                            }) {
+                                Text("Back to Home")
                             }
                         }
+                    } else {
+                        val seed = route.levelId.toLongOrNull() ?: route.levelId.hashCode().toLong()
+                        MinesweeperView(
+                            username = route.username,
+                            stage = stage,
+                            seed = seed,
+                            syncService = syncService,
+                            onBack = { navigateTo(AppRoute.UserHome(route.username)) },
+                            onNewGame = { newSeed ->
+                                navigateTo(
+                                    AppRoute.GameDeepLink(
+                                        username = route.username,
+                                        stage = stage.name,
+                                        gameName = "minesweeper",
+                                        levelId = newSeed.toString()
+                                    )
+                                )
+                            }
+                        )
                     }
+                } else {
+                    Div({ style { lollipopCard() } }) {
+                        H2({ style { lollipopHeading() } }) { Text("${route.gameName} Game") }
+                        P({ style { lollipopParagraph() } }) {
+                            Span({ style { lollipopPill() } }) { Text("Player: ${route.username}") }
+                            Span({ style { lollipopPill() } }) { Text("Stage: ${route.stage}") }
+                            Span({ style { lollipopPill() } }) { Text("Level: ${route.levelId}") }
+                        }
+                        P({ style { lollipopParagraph() } }) { Text("No game implemented yet for this level.") }
 
-                    Button({
-                        style { lollipopButtonSecondary() }
-                        onClick { navigateTo(AppRoute.UserHome(route.username)) }
-                    }) {
-                        Text("Back to Home")
+                        Button({
+                            style { lollipopButtonSecondary() }
+                            onClick { navigateTo(AppRoute.UserHome(route.username)) }
+                        }) {
+                            Text("Back to Home")
+                        }
                     }
                 }
             }
