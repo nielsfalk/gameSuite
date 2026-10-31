@@ -38,9 +38,9 @@ class ServerSmokeTest : FreeSpec({
             )
 
             val testCases = listOf(
-                ScoreTestCase("alice", "memory", "easy", "1", 1500L, 120L),
-                ScoreTestCase("bob", "memory", "hard", "1", 2300L, -30L),
-                ScoreTestCase("charlie", "memory", "medium", "2", 4500L, 250L)
+                ScoreTestCase("alice", "minesweeper", "easy", "1", 1500L, 120L),
+                ScoreTestCase("bob", "minesweeper", "beginner", "2", 2300L, -30L),
+                ScoreTestCase("charlie", "minesweeper", "expert", "3", 4500L, 250L)
             )
 
             testApplication {
@@ -76,6 +76,47 @@ class ServerSmokeTest : FreeSpec({
                     assert(summary.gameName == testCase.gameName)
                     assert(summary.topScores.isNotEmpty())
                 }
+            }
+        }
+
+        "should reject unknown games and stages before accepting scores" {
+            testApplication {
+                application { module() }
+                val jsonClient = createClient {
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                }
+
+                val unknownGamePost = jsonClient.post("/alice/unknown/easy/1") {
+                    contentType(ContentType.Application.Json)
+                    setBody(ScoreSubmission(time = 1000L, points = 10L))
+                }
+                assert(unknownGamePost.status == HttpStatusCode.BadRequest)
+
+                val unknownStagePost = jsonClient.post("/alice/minesweeper/hard/1") {
+                    contentType(ContentType.Application.Json)
+                    setBody(ScoreSubmission(time = 1000L, points = 10L))
+                }
+                assert(unknownStagePost.status == HttpStatusCode.BadRequest)
+
+                val unknownGameGet = jsonClient.get("/alice/unknown/easy/1")
+                assert(unknownGameGet.status == HttpStatusCode.BadRequest)
+
+                val unknownStageGet = jsonClient.get("/alice/minesweeper/hard/1")
+                assert(unknownStageGet.status == HttpStatusCode.BadRequest)
+
+                val unknownGameHighscores = jsonClient.get("/highscores/unknown/easy/1")
+                assert(unknownGameHighscores.status == HttpStatusCode.BadRequest)
+
+                val unknownStageHighscores = jsonClient.get("/highscores/minesweeper/hard/1")
+                assert(unknownStageHighscores.status == HttpStatusCode.BadRequest)
+
+                val validCustomStagePost = jsonClient.post("/alice/minesweeper/custom-9x9-10/1") {
+                    contentType(ContentType.Application.Json)
+                    setBody(ScoreSubmission(time = 1000L, points = 10L))
+                }
+                assert(validCustomStagePost.status == HttpStatusCode.Created)
             }
         }
     }

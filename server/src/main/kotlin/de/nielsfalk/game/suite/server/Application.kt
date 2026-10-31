@@ -1,11 +1,13 @@
 package de.nielsfalk.game.suite.server
 
+import de.nielsfalk.game.suite.common.GameCatalog
 import de.nielsfalk.game.suite.common.Score
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
@@ -28,6 +30,21 @@ data class ScoreSubmission(
     val time: Long,
     val points: Long
 )
+
+private suspend fun ApplicationCall.rejectUnknownGameOrStage(gameName: String, stage: String): Boolean {
+    if (!GameCatalog.isValidGame(gameName)) {
+        respond(HttpStatusCode.BadRequest, mapOf("error" to "Unknown game: $gameName"))
+        return false
+    }
+    if (!GameCatalog.isValidStage(gameName, stage)) {
+        respond(
+            HttpStatusCode.BadRequest,
+            mapOf("error" to "Unknown stage '$stage' for game '$gameName'")
+        )
+        return false
+    }
+    return true
+}
 
 fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
@@ -79,6 +96,7 @@ fun Application.module(repository: ScoreRepository = ScoreRepository()) {
             val gameName = call.parameters["gameName"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing gameName")
             val stage = call.parameters["stage"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing stage")
             val levelId = call.parameters["levelId"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing levelId")
+            if (!call.rejectUnknownGameOrStage(gameName, stage)) return@get
             val summary = repository.getHighscores(gameName, stage, levelId)
             call.respond(summary)
         }
@@ -89,6 +107,7 @@ fun Application.module(repository: ScoreRepository = ScoreRepository()) {
             val gameName = call.parameters["gameName"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing gameName")
             val stage = call.parameters["stage"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing stage")
             val levelId = call.parameters["levelId"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing levelId")
+            if (!call.rejectUnknownGameOrStage(gameName, stage)) return@get
 
             val scores = repository.getScores(username, gameName, stage, levelId)
             call.respond(scores)
@@ -100,6 +119,7 @@ fun Application.module(repository: ScoreRepository = ScoreRepository()) {
             val gameName = call.parameters["gameName"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing gameName")
             val stage = call.parameters["stage"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing stage")
             val levelId = call.parameters["levelId"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing levelId")
+            if (!call.rejectUnknownGameOrStage(gameName, stage)) return@post
 
             val submission = call.receive<ScoreSubmission>()
             val score = Score(
