@@ -48,6 +48,8 @@ fun MinesweeperView(
 
     fun handleReveal(x: Int, y: Int) {
         if (game.isOver) return
+        val cell = game.cellAt(x, y)
+        if (cell.revealed || cell.flagged) return
         if (!game.minesPlaced) startedAt = Date.now()
         game.reveal(x, y)
         if (game.isOver) updateElapsed()

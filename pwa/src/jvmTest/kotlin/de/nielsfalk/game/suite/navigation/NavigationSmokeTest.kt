@@ -16,7 +16,14 @@ class NavigationSmokeTest : FreeSpec({
             val cases = listOf(
                 DeepLinkCase("/alice/easy/memory/1", "alice", "easy", "memory", "1"),
                 DeepLinkCase("/bob/hard/memory/2", "bob", "hard", "memory", "2"),
-                DeepLinkCase("/charlie/medium/game/3", "charlie", "medium", "game", "3")
+                DeepLinkCase("/charlie/medium/game/3", "charlie", "medium", "game", "3"),
+                DeepLinkCase(
+                    "/dora/custom-12x10-20/minesweeper/123456789",
+                    "dora",
+                    "custom-12x10-20",
+                    "minesweeper",
+                    "123456789"
+                )
             )
 
             cases.forEach { (path, username, stage, gameName, levelId) ->
@@ -75,6 +82,10 @@ class NavigationSmokeTest : FreeSpec({
                 RoundTripCase(
                     AppRoute.GameDeepLink("bob", "hard", "memory", "2"),
                     "/bob/hard/memory/2"
+                ),
+                RoundTripCase(
+                    AppRoute.GameDeepLink("dora", "custom-12x10-20", "minesweeper", "123456789"),
+                    "/dora/custom-12x10-20/minesweeper/123456789"
                 )
             )
 
