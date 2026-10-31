@@ -185,6 +185,19 @@ fun AppView(
                             }
                         }
                     }
+
+                    Div({ style { property("margin-top", "1.25rem") } }) {
+                        Button({
+                            style { lollipopButtonSecondary() }
+                            onClick {
+                                storageService.clearUsername()
+                                inputUsername = ""
+                                navigateTo(AppRoute.AskUsername)
+                            }
+                        }) {
+                            Text("Log out")
+                        }
+                    }
                 }
             }
 
