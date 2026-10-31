@@ -34,6 +34,10 @@ Gamesuite is a multi-module Kotlin game platform.
 - [x] [T07] Lollipop design: fat font, round edges, dark background, and popping colors for the PWA
 - [x] [T08] Pre-push git hook: runs all tests across all modules and verifies that commit author and coauthors differ; installable via a Gradle task
 - [x] [T09] Commit-msg git hook: fails a commit when the author appears as a coauthor or coauthors are not unique; a single Gradle task installs all hooks
+- [x] [T10] Shared module: reusable `SquareGrid` with cells in the common package for grid-based games
+- [x] [T11] Shared module: Minesweeper game with serializable stages — easy, beginner, and expert presets plus a custom stage with parameters (width, height, mine count)
+- [x] [T12] Server module: always validate that gameName and stage exist before accepting score requests (unknown games/stages are rejected)
+- [x] [T13] PWA module: Minesweeper gameplay with stage selection (easy, beginner, expert, custom) using the shared SquareGrid and stages
 
 ## License
 
