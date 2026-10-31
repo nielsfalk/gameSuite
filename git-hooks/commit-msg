@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Commit-msg hook: fails the commit when the author and coauthors are not
+# unique, i.e. when:
+#   - the commit author also appears as a Co-authored-by trailer, or
+#   - a Co-authored-by trailer is listed more than once.
+#
+# The commit author is taken from the git config (the configured git user).
+# Installed by the Gradle task `installHooks`.
+
+set -euo pipefail
+
+message_file="$1"
+
+author_name="$(git config user.name)"
+author_email="$(git config user.email)"
+author_identity="${author_name} <${author_email}>"
+
+# Collect all Co-authored-by trailers from the commit message.
+coauthors="$(grep -i '^Co-authored-by:' "$message_file" \
+    | sed -E 's/^[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*//' \
+    | sed -E 's/[[:space:]]*$//' \
+    | sed '/^$/d')"
+
+declare -A seen=()
+status=0
+
+while IFS= read -r coauthor; do
+  [ -z "$coauthor" ] && continue
+  if [ "$coauthor" = "$author_identity" ]; then
+    echo "commit-msg: author and coauthor are the same (${author_identity}) — commit aborted." >&2
+    status=1
+  fi
+  if [ -n "${seen[$coauthor]+x}" ]; then
+    echo "commit-msg: duplicate coauthor (${coauthor}) — commit aborted." >&2
+    status=1
+  fi
+  seen["$coauthor"]=1
+done <<< "$coauthors"
+
+exit "$status"

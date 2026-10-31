@@ -14,15 +14,18 @@ allprojects {
     version = "1.0.0-SNAPSHOT"
 }
 
-tasks.register("installPrePushHook") {
+tasks.register("installHooks") {
     group = "verification"
-    description = "Installs the pre-push git hook that runs all tests and checks author/coauthor differences."
+    description = "Installs all git hooks (commit-msg and pre-push) into .git/hooks/."
     doLast {
-        val source = layout.projectDirectory.file("git-hooks/pre-push").asFile
-        val target = layout.projectDirectory.file(".git/hooks/pre-push").asFile
-        target.parentFile.mkdirs()
-        source.copyTo(target, overwrite = true)
-        target.setExecutable(true)
-        logger.lifecycle("Installed pre-push hook to ${target.relativeTo(rootDir)}.")
+        val hooksDir = layout.projectDirectory.file(".git/hooks").asFile
+        hooksDir.mkdirs()
+        listOf("commit-msg", "pre-push").forEach { hook ->
+            val source = layout.projectDirectory.file("git-hooks/$hook").asFile
+            val target = layout.projectDirectory.file(".git/hooks/$hook").asFile
+            source.copyTo(target, overwrite = true)
+            target.setExecutable(true)
+            logger.lifecycle("Installed $hook hook to ${target.relativeTo(rootDir)}.")
+        }
     }
 }
