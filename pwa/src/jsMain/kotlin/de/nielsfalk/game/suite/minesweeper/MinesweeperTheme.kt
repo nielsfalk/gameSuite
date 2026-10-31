@@ -64,13 +64,14 @@ fun StyleScope.minesweeperCell(cell: MinesweeperCell, status: MinesweeperStatus)
     }
 }
 
-fun StyleScope.minesweeperStatusBar() {
+fun StyleScope.minesweeperStatusBar(version: Int) {
     property("display", "flex")
     property("flex-wrap", "wrap")
     property("gap", "0.5rem")
     property("align-items", "center")
     property("justify-content", "center")
     property("margin-bottom", "1rem")
+    property("--minesweeper-version", version.toString())
 }
 
 fun StyleScope.minesweeperControls() {

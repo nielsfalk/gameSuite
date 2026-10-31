@@ -92,6 +92,12 @@ fun MinesweeperView(
             Text("Minesweeper · ${stage.name}")
         }
 
+        Div({ style { minesweeperStatusBar(version) } }) {
+            Span({ style { lollipopPill() } }) { Text("Mines: ${game.minesRemaining}") }
+            Span({ style { lollipopPill() } }) { Text("Time: ${elapsedSeconds}s") }
+            Span({ style { lollipopPill() } }) { Text("Points: ${game.points}") }
+        }
+
         key(version) {
             P({ style { lollipopParagraph() } }) {
                 Text(
@@ -101,12 +107,6 @@ fun MinesweeperView(
                         MinesweeperStatus.InProgress -> "Tap to reveal. Right-click or use flag mode to flag."
                     }
                 )
-            }
-
-            Div({ style { minesweeperStatusBar() } }) {
-                Span({ style { lollipopPill() } }) { Text("Mines: ${game.minesRemaining}") }
-                Span({ style { lollipopPill() } }) { Text("Time: ${elapsedSeconds}s") }
-                Span({ style { lollipopPill() } }) { Text("Points: ${game.points}") }
             }
 
             Div({ style { minesweeperBoard(stage.width) } }) {
