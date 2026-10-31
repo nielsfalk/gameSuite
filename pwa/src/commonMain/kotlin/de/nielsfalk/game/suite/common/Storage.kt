@@ -6,6 +6,7 @@ import kotlinx.serialization.json.Json
 interface StorageDriver {
     fun getItem(key: String): String?
     fun setItem(key: String, value: String)
+    fun removeItem(key: String)
 }
 
 class InMemoryStorageDriver : StorageDriver {
@@ -13,6 +14,9 @@ class InMemoryStorageDriver : StorageDriver {
     override fun getItem(key: String): String? = store[key]
     override fun setItem(key: String, value: String) {
         store[key] = value
+    }
+    override fun removeItem(key: String) {
+        store.remove(key)
     }
 }
 
@@ -23,6 +27,10 @@ class ScoreStorageService(private val storage: StorageDriver = InMemoryStorageDr
 
     fun setUsername(username: String) {
         storage.setItem("gamesuite_username", username)
+    }
+
+    fun clearUsername() {
+        storage.removeItem("gamesuite_username")
     }
 
     fun getLocalScores(): List<Score> {

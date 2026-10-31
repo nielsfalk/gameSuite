@@ -21,6 +21,13 @@ class BrowserLocalStorageDriver : StorageDriver {
         } catch (_: Throwable) {
         }
     }
+
+    override fun removeItem(key: String) {
+        try {
+            localStorage.removeItem(key)
+        } catch (_: Throwable) {
+        }
+    }
 }
 
 class ScoreSyncService(

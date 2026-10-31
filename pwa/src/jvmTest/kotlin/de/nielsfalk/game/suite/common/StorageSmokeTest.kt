@@ -70,6 +70,18 @@ class StorageSmokeTest : FreeSpec({
             assert(scores.contains(score2))
         }
 
+        "should clear the username without removing local scores" {
+            val storage = ScoreStorageService(InMemoryStorageDriver())
+            val score = Score("alice", "minesweeper", "easy", "42", 1000L, -30L)
+            storage.setUsername("alice")
+            storage.saveScoreLocally(score)
+
+            storage.clearUsername()
+
+            assert(storage.getUsername() == null)
+            assert(storage.getLocalScores() == listOf(score))
+        }
+
         "should return empty list when no scores stored" {
             val storage = ScoreStorageService(InMemoryStorageDriver())
             assert(storage.getLocalScores().isEmpty())
