@@ -43,6 +43,7 @@ Gamesuite is a multi-module Kotlin game platform.
 - [x] [T16] PWA module: CSS confetti-burst winning animation (~2s, non-blocking, respects `prefers-reduced-motion`) when a Minesweeper game is cleared
 - [x] [T17] PWA module: automatically flag all mines when a Minesweeper game is finished
 - [x] [T18] Shared/PWA modules: `HexMine`, a Minesweeper variant on a hexagonal grid using the shared `HexGrid`
+- [x] [T19] PWA module: navigation fixes (deployment base path, browser back/forward, preserved game/stage selection)
 
 ## License
 
