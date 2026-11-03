@@ -100,6 +100,7 @@ class MinesweeperGame(
 
         if (revealedSafeCells == stage.cells - stage.mines) {
             status = MinesweeperStatus.Won
+            flagAllMines()
             return RevealResult.Won
         }
 
@@ -167,6 +168,14 @@ class MinesweeperGame(
         grid.forEachCell { x, y, cell ->
             if (cell.hasMine) {
                 grid[x, y] = cell.copy(revealed = true)
+            }
+        }
+    }
+
+    private fun flagAllMines() {
+        grid.forEachCell { x, y, cell ->
+            if (cell.hasMine && !cell.flagged) {
+                grid[x, y] = cell.copy(flagged = true)
             }
         }
     }

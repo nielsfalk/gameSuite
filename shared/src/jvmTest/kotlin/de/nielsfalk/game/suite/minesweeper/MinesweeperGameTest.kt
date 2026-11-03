@@ -149,6 +149,26 @@ class MinesweeperGameTest : FreeSpec({
             assert(game.points == -(game.revealClicks * MinesweeperGame.REVEAL_COST + game.flagClicks * MinesweeperGame.FLAG_COST))
         }
 
+        "automatically flags all mines when the game is won" {
+            val game = MinesweeperGame(MinesweeperStage.Custom(5, 5, 1), seed = 7L)
+            game.reveal(2, 2)
+
+            game.coordinates().forEach { (x, y) ->
+                if (!game.cellAt(x, y).hasMine) {
+                    game.reveal(x, y)
+                }
+            }
+
+            assert(game.status == MinesweeperStatus.Won)
+            assert(game.flagsPlaced == game.stage.mines)
+            assert(game.minesRemaining == 0)
+            assert(game.flagClicks == 0L)
+            game.mineCoordinates().forEach { (x, y) ->
+                assert(game.cellAt(x, y).flagged)
+                assert(!game.cellAt(x, y).revealed)
+            }
+        }
+
         "computes points as negative reveal and flag costs" {
             val game = MinesweeperGame(MinesweeperStage.Custom(9, 9, 10), seed = 5L)
             game.reveal(0, 0)
