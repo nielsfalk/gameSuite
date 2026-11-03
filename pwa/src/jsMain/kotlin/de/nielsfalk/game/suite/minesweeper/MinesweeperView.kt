@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.nielsfalk.game.suite.common.Score
 import de.nielsfalk.game.suite.common.ScoreSyncService
+import de.nielsfalk.game.suite.navigation.LollipopTheme
 import de.nielsfalk.game.suite.navigation.lollipopButton
 import de.nielsfalk.game.suite.navigation.lollipopButtonSecondary
 import de.nielsfalk.game.suite.navigation.lollipopCard
@@ -99,6 +100,10 @@ fun MinesweeperView(
         }
 
         key(version) {
+            if (game.status == MinesweeperStatus.Won) {
+                MinesweeperConfetti(seed)
+            }
+
             P({ style { lollipopParagraph() } }) {
                 Text(
                     when (game.status) {
@@ -163,4 +168,73 @@ private fun minesweeperCellLabel(cell: MinesweeperCell): String = when {
     cell.revealed -> ""
     cell.flagged -> "F"
     else -> ""
+}
+
+@Composable
+private fun MinesweeperConfetti(seed: Long) {
+    Div({
+        classes("minesweeper-confetti")
+        style {
+            property("position", "absolute")
+            property("inset", "0")
+            property("overflow", "hidden")
+            property("pointer-events", "none")
+            property("border-radius", LollipopTheme.radius)
+        }
+    }) {
+        confettiPieces(seed).forEach { piece ->
+            Span({
+                style {
+                    property("position", "absolute")
+                    property("top", "-24px")
+                    property("left", "${piece.leftPercent}%")
+                    property("width", "${piece.width}px")
+                    property("height", "${piece.height}px")
+                    property("background", piece.color)
+                    property("border-radius", piece.radius)
+                    property("animation", "lollipop-confetti-fall ${piece.durationMs}ms ease-in ${piece.delayMs}ms both")
+                    property("--drift", "${piece.driftPx}px")
+                    property("--spin", "${piece.spinDeg}deg")
+                }
+            })
+        }
+    }
+}
+
+private data class ConfettiPiece(
+    val leftPercent: Int,
+    val width: Int,
+    val height: Int,
+    val color: String,
+    val radius: String,
+    val delayMs: Int,
+    val durationMs: Int,
+    val driftPx: Int,
+    val spinDeg: Int
+)
+
+private fun confettiPieces(seed: Long): List<ConfettiPiece> {
+    val random = Random(seed)
+    val colors = listOf(
+        LollipopTheme.primary,
+        LollipopTheme.secondary,
+        LollipopTheme.accent,
+        LollipopTheme.success,
+        LollipopTheme.violet,
+        LollipopTheme.orange
+    )
+
+    return List(42) {
+        ConfettiPiece(
+            leftPercent = random.nextInt(0, 101),
+            width = random.nextInt(6, 13),
+            height = random.nextInt(8, 17),
+            color = colors[random.nextInt(colors.size)],
+            radius = if (random.nextBoolean()) "50%" else "2px",
+            delayMs = random.nextInt(0, 600),
+            durationMs = random.nextInt(1200, 2200),
+            driftPx = random.nextInt(-80, 81),
+            spinDeg = random.nextInt(-720, 721)
+        )
+    }
 }

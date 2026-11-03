@@ -50,6 +50,8 @@ fun StyleScope.lollipopCard() {
     property("padding", "1.5rem")
     property("box-shadow", "${LollipopTheme.shadow}, 0 0 0 1px rgba(255,255,255,0.04) inset")
     property("margin-bottom", "1.25rem")
+    property("position", "relative")
+    property("overflow", "hidden")
 }
 
 fun StyleScope.lollipopTitle() {
