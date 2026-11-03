@@ -1,6 +1,7 @@
 package de.nielsfalk.game.suite.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -10,9 +11,11 @@ import de.nielsfalk.game.suite.common.ScoreSyncService
 import de.nielsfalk.game.suite.hexmine.HexMineView
 import de.nielsfalk.game.suite.minesweeper.MinesweeperStage
 import de.nielsfalk.game.suite.minesweeper.MinesweeperView
+import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
+import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H1
@@ -26,6 +29,8 @@ import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.Ul
+import org.w3c.dom.HTMLScriptElement
+import org.w3c.dom.events.Event
 import kotlin.random.Random
 
 @Composable
@@ -34,9 +39,10 @@ fun AppView(
     storageService: ScoreStorageService = ScoreStorageService(),
     syncService: ScoreSyncService = ScoreSyncService(storageService)
 ) {
+    val basePath = remember { appBasePath() }
     var currentRoute by remember {
         val storedUsername = storageService.getUsername()
-        mutableStateOf(AppRoute.parse(initialPath, storedUsername))
+        mutableStateOf(AppRoute.parse(initialPath, storedUsername, basePath))
     }
 
     var inputUsername by remember { mutableStateOf("") }
@@ -48,10 +54,26 @@ fun AppView(
 
     fun navigateTo(route: AppRoute) {
         currentRoute = route
-        val path = route.toPath()
+        val path = route.toPath(basePath)
         try {
             window.history.pushState(null, "", path)
         } catch (_: Throwable) {
+        }
+    }
+
+    DisposableEffect(Unit) {
+        val listener: (Event) -> Unit = {
+            currentRoute = AppRoute.parse(
+                window.location.pathname.ifBlank { window.location.hash },
+                storageService.getUsername(),
+                basePath
+            )
+        }
+        window.addEventListener("popstate", listener)
+        window.addEventListener("hashchange", listener)
+        onDispose {
+            window.removeEventListener("popstate", listener)
+            window.removeEventListener("hashchange", listener)
         }
     }
 
@@ -115,8 +137,12 @@ fun AppView(
                             style { lollipopInput() }
                             onChange { it.value?.let { game -> selectedGame = game } }
                         }) {
-                            Option("minesweeper") { Text("Minesweeper") }
-                            Option("hexmine") { Text("HexMine") }
+                            Option("minesweeper", attrs = {
+                                if (selectedGame == "minesweeper") selected()
+                            }) { Text("Minesweeper") }
+                            Option("hexmine", attrs = {
+                                if (selectedGame == "hexmine") selected()
+                            }) { Text("HexMine") }
                         }
 
                         Span({ style { property("display", "block"); property("height", "0.75rem") } })
@@ -126,10 +152,18 @@ fun AppView(
                             style { lollipopInput() }
                             onChange { it.value?.let { stage -> selectedStage = stage } }
                         }) {
-                            Option(MinesweeperStage.Easy.name) { Text("Easy") }
-                            Option(MinesweeperStage.Beginner.name) { Text("Beginner") }
-                            Option(MinesweeperStage.Expert.name) { Text("Expert") }
-                            Option("custom") { Text("Custom") }
+                            Option(MinesweeperStage.Easy.name, attrs = {
+                                if (selectedStage == MinesweeperStage.Easy.name) selected()
+                            }) { Text("Easy") }
+                            Option(MinesweeperStage.Beginner.name, attrs = {
+                                if (selectedStage == MinesweeperStage.Beginner.name) selected()
+                            }) { Text("Beginner") }
+                            Option(MinesweeperStage.Expert.name, attrs = {
+                                if (selectedStage == MinesweeperStage.Expert.name) selected()
+                            }) { Text("Expert") }
+                            Option("custom", attrs = {
+                                if (selectedStage == "custom") selected()
+                            }) { Text("Custom") }
                         }
 
                         if (selectedStage == "custom") {
@@ -296,4 +330,14 @@ fun AppView(
             }
         }
     }
+}
+
+private fun appBasePath(): String {
+    val script = document.querySelector("script[src$='gameSuite-pwa.js']") as? HTMLScriptElement
+        ?: return "/"
+    val origin = window.location.origin
+    val src = script.src
+    if (!src.startsWith(origin)) return "/"
+    val directory = src.removePrefix(origin).substringBeforeLast('/')
+    return if (directory.isEmpty()) "/" else "$directory/"
 }

@@ -74,6 +74,44 @@ class NavigationSmokeTest : FreeSpec({
             assert((route as AppRoute.UserHome).username == "alice")
         }
 
+        "should strip a deployment base path when parsing" - {
+            val home = AppRoute.parse("/gameSuite/alice", basePath = "/gameSuite/")
+            assert(home is AppRoute.UserHome)
+            assert((home as AppRoute.UserHome).username == "alice")
+
+            val deepLink = AppRoute.parse(
+                path = "/gameSuite/alice/easy/hexmine/1",
+                basePath = "/gameSuite/"
+            )
+            assert(deepLink is AppRoute.GameDeepLink)
+            deepLink as AppRoute.GameDeepLink
+            assert(deepLink.username == "alice")
+            assert(deepLink.stage == "easy")
+            assert(deepLink.gameName == "hexmine")
+            assert(deepLink.levelId == "1")
+
+            assert(AppRoute.parse("/gameSuite/", basePath = "/gameSuite/") is AppRoute.AskUsername)
+            assert(AppRoute.parse("/gameSuite", basePath = "/gameSuite/") is AppRoute.AskUsername)
+
+            val stored = AppRoute.parse(
+                path = "/gameSuite/",
+                storedUsername = "alice",
+                basePath = "/gameSuite/"
+            )
+            assert(stored is AppRoute.UserHome)
+            assert((stored as AppRoute.UserHome).username == "alice")
+        }
+
+        "should build paths under the deployment base path" {
+            assert(AppRoute.AskUsername.toPath("/gameSuite/") == "/gameSuite/")
+            assert(AppRoute.UserHome("alice").toPath("/gameSuite/") == "/gameSuite/alice")
+            assert(
+                AppRoute.GameDeepLink("alice", "easy", "hexmine", "1").toPath("/gameSuite/") ==
+                    "/gameSuite/alice/easy/hexmine/1"
+            )
+            assert(AppRoute.UserHome("alice").toPath("/") == "/alice")
+        }
+
         "should round-trip routes through toPath and parse" - {
             data class RoundTripCase(val route: AppRoute, val expectedPath: String)
 
