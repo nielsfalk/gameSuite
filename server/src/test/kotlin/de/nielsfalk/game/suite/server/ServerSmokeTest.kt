@@ -40,7 +40,9 @@ class ServerSmokeTest : FreeSpec({
             val testCases = listOf(
                 ScoreTestCase("alice", "minesweeper", "easy", "1", 1500L, 120L),
                 ScoreTestCase("bob", "minesweeper", "beginner", "2", 2300L, -30L),
-                ScoreTestCase("charlie", "minesweeper", "expert", "3", 4500L, 250L)
+                ScoreTestCase("charlie", "minesweeper", "expert", "3", 4500L, 250L),
+                ScoreTestCase("dana", "hexmine", "easy", "4", 1800L, 90L),
+                ScoreTestCase("erin", "hexmine", "custom-7x7-5", "5", 2100L, -40L)
             )
 
             testApplication {
