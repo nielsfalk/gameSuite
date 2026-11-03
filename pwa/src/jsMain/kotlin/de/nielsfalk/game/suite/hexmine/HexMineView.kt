@@ -115,7 +115,7 @@ fun HexMineView(
             }
 
             Div({ style { hexMineBoardScroller() } }) {
-                Div({ style { hexMineBoard() } }) {
+                Div({ style { hexMineBoard(stage.width) } }) {
                     for (y in 0 until stage.height) {
                         Div({ style { hexMineRow(y) } }) {
                             for (x in 0 until stage.width) {

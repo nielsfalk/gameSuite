@@ -11,8 +11,8 @@ fun StyleScope.hexMineBoardScroller() {
     property("padding-bottom", "4px")
 }
 
-fun StyleScope.hexMineBoard() {
-    property("--hex-size", "clamp(12px, 3.2vw, 34px)")
+fun StyleScope.hexMineBoard(width: Int) {
+    property("--hex-size", "clamp(12px, calc((100vw - 160px) / $width), 38px)")
     property("display", "flex")
     property("flex-direction", "column")
     property("align-items", "flex-start")
