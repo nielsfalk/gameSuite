@@ -48,6 +48,13 @@
             from { opacity: 0; transform: translateY(10px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        @keyframes lollipop-confetti-fall {
+            0% { transform: translate3d(0, -20px, 0) rotate(0deg); opacity: 1; }
+            100% { transform: translate3d(var(--drift, 0px), 560px, 0) rotate(var(--spin, 360deg)); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .minesweeper-confetti { display: none; }
+        }
     </style>
 </head>
 <body>
