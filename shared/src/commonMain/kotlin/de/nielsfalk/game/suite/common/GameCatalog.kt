@@ -9,13 +9,14 @@ import de.nielsfalk.game.suite.minesweeper.MinesweeperStage
  */
 object GameCatalog {
     const val MINESWEEPER: String = "minesweeper"
+    const val HEXMINE: String = "hexmine"
 
-    val gameNames: Set<String> = setOf(MINESWEEPER)
+    val gameNames: Set<String> = setOf(MINESWEEPER, HEXMINE)
 
     fun isValidGame(gameName: String): Boolean = gameName in gameNames
 
     fun isValidStage(gameName: String, stage: String): Boolean = when (gameName) {
-        MINESWEEPER -> MinesweeperStage.parse(stage) != null
+        MINESWEEPER, HEXMINE -> MinesweeperStage.parse(stage) != null
         else -> false
     }
 

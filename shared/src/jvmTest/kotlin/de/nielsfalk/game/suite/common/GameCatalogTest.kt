@@ -7,6 +7,8 @@ class GameCatalogTest : FreeSpec({
         "knows the supported games" {
             assert(GameCatalog.isValidGame(GameCatalog.MINESWEEPER))
             assert(GameCatalog.isValidGame("minesweeper"))
+            assert(GameCatalog.isValidGame(GameCatalog.HEXMINE))
+            assert(GameCatalog.isValidGame("hexmine"))
             assert(!GameCatalog.isValidGame("unknown"))
             assert(!GameCatalog.isValidGame(""))
         }
@@ -28,6 +30,36 @@ class GameCatalogTest : FreeSpec({
             ).forEach { stage ->
                 "stage $stage" {
                     assert(GameCatalog.isValidStage(GameCatalog.MINESWEEPER, stage))
+                }
+            }
+        }
+
+        "accepts the same preset and custom stages for hexmine" - {
+            listOf(
+                "easy",
+                "beginner",
+                "expert",
+                "custom-5x5-1",
+                "custom-12x10-20",
+                "custom-30x30-100"
+            ).forEach { stage ->
+                "stage $stage" {
+                    assert(GameCatalog.isValidStage(GameCatalog.HEXMINE, stage))
+                    assert(GameCatalog.isValid(GameCatalog.HEXMINE, stage))
+                }
+            }
+        }
+
+        "rejects unknown or malformed hexmine stages" - {
+            listOf(
+                "",
+                "hard",
+                "custom",
+                "custom-4x4-1",
+                "custom-12x10-1000"
+            ).forEach { stage ->
+                "stage $stage" {
+                    assert(!GameCatalog.isValidStage(GameCatalog.HEXMINE, stage))
                 }
             }
         }
