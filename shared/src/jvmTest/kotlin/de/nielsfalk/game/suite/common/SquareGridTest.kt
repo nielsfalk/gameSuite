@@ -5,6 +5,19 @@ import io.kotest.core.spec.style.FreeSpec
 
 class SquareGridTest : FreeSpec({
     "SquareGrid" - {
+        "implements the Grid interface" {
+            val grid: Grid<Int> = SquareGrid(width = 3, height = 3) { x, y -> x * 10 + y }
+
+            assert(grid.width == 3)
+            assert(grid.height == 3)
+            assert(grid.size == 9)
+            assert(grid[1, 2] == 12)
+            assert(grid.neighbors(1, 1).size == 8)
+
+            grid[0, 0] = 99
+            assert(grid[0, 0] == 99)
+        }
+
         "initializes every cell with its coordinates" {
             val grid = SquareGrid(width = 3, height = 2) { x, y -> x * 10 + y }
 
