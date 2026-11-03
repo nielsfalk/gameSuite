@@ -48,6 +48,7 @@ fun StyleScope.lollipopCard() {
     property("border", "2px solid rgba(179,136,255,0.18)")
     property("border-radius", LollipopTheme.radius)
     property("padding", "1.5rem")
+    property("box-sizing", "border-box")
     property("box-shadow", "${LollipopTheme.shadow}, 0 0 0 1px rgba(255,255,255,0.04) inset")
     property("margin-bottom", "1.25rem")
     property("position", "relative")
