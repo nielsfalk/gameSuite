@@ -42,6 +42,7 @@ Gamesuite is a multi-module Kotlin game platform.
 - [x] [T15] Shared module: `Grid<T>` interface (width/height, bounds, get/set, neighbors) implemented by `SquareGrid` and a new `HexGrid` using odd-r offset coordinates (pointy-top hexes on a rectangular board)
 - [ ] [T16] PWA module: CSS confetti-burst winning animation (~2s, non-blocking, respects `prefers-reduced-motion`) when a Minesweeper game is cleared
 - [ ] [T17] PWA module: automatically flag all mines when a Minesweeper game is finished
+- [ ] [T18] Shared/PWA modules: `HexMine`, a Minesweeper variant on a hexagonal grid using the shared `HexGrid`
 
 ## License
 
