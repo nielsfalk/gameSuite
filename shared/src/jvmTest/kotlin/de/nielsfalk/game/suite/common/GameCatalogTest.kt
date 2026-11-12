@@ -9,6 +9,8 @@ class GameCatalogTest : FreeSpec({
             assert(GameCatalog.isValidGame("minesweeper"))
             assert(GameCatalog.isValidGame(GameCatalog.HEXMINE))
             assert(GameCatalog.isValidGame("hexmine"))
+            assert(GameCatalog.isValidGame(GameCatalog.HEXLASER))
+            assert(GameCatalog.isValidGame("hexlaser"))
             assert(!GameCatalog.isValidGame("unknown"))
             assert(!GameCatalog.isValidGame(""))
         }
@@ -60,6 +62,39 @@ class GameCatalogTest : FreeSpec({
             ).forEach { stage ->
                 "stage $stage" {
                     assert(!GameCatalog.isValidStage(GameCatalog.HEXMINE, stage))
+                }
+            }
+        }
+
+        "accepts every hexlaser stage" - {
+            listOf(
+                "absolute_beginner",
+                "easy",
+                "intermediate",
+                "intermediate_plus",
+                "intermediate_plus2",
+                "hard",
+                "harder",
+                "insane",
+                "nightmare",
+                "nightmare_plus",
+                "nightmare_plus2"
+            ).forEach { stage ->
+                "stage $stage" {
+                    assert(GameCatalog.isValidStage(GameCatalog.HEXLASER, stage))
+                    assert(GameCatalog.isValid(GameCatalog.HEXLASER, stage))
+                }
+            }
+        }
+
+        "accepts hexlaser stages regardless of case" {
+            assert(GameCatalog.isValidStage(GameCatalog.HEXLASER, "HARD"))
+        }
+
+        "rejects unknown or malformed hexlaser stages" - {
+            listOf("", "impossible", "easy-1").forEach { stage ->
+                "stage $stage" {
+                    assert(!GameCatalog.isValidStage(GameCatalog.HEXLASER, stage))
                 }
             }
         }
