@@ -31,9 +31,12 @@ internal val Grid.emptyCells: List<Cell>
     get() = cells.filter { it.source == null && it.connections.isEmpty() }
 
 
+const val DEFAULT_SEED: Long = 0x5EEDL
+
 class GridGenerator(
-    val random: Random = Random.Default,
     val stageType: StageType = StageType.entries.first(),
+    val seed: Long = DEFAULT_SEED,
+    val random: Random = Random(seed),
     val stageProperties: StageProperties = stageType.stageProperties.random(random)
 ) {
     var grid = newGrid()
