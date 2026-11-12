@@ -44,6 +44,7 @@ Gamesuite is a multi-module Kotlin game platform.
 - [x] [T17] PWA module: automatically flag all mines when a Minesweeper game is finished
 - [x] [T18] Shared/PWA modules: `HexMine`, a Minesweeper variant on a hexagonal grid using the shared `HexGrid`
 - [x] [T19] PWA module: navigation fixes (deployment base path, browser back/forward, preserved game/stage selection)
+- [ ] [T20] Shared/PWA/server: port hexlaser into `de.nielsfalk.game.suite.hexlaser`, rename levels to stages, seed stage generation with a deterministic default, add the HTML5 canvas PWA view and deep links, and register/score `hexlaser`
 
 ## License
 
