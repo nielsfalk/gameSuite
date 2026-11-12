@@ -3,6 +3,7 @@ package de.nielsfalk.game.suite.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -339,33 +340,35 @@ fun AppView(
                                 onBack = onBack
                             )
                         } else {
-                            HexlaserView(
-                                username = route.username,
-                                stageType = stageType,
-                                seed = seed,
-                                syncService = syncService,
-                                onBack = onBack,
-                                onNewGame = { newSeed ->
-                                    navigateTo(
-                                        AppRoute.GameDeepLink(
-                                            username = route.username,
-                                            stage = stageType.wireName,
-                                            gameName = "hexlaser",
-                                            levelId = newSeed.toString()
+                            key(route.username, stageType, seed) {
+                                HexlaserView(
+                                    username = route.username,
+                                    stageType = stageType,
+                                    seed = seed,
+                                    syncService = syncService,
+                                    onBack = onBack,
+                                    onNewGame = { newSeed ->
+                                        navigateTo(
+                                            AppRoute.GameDeepLink(
+                                                username = route.username,
+                                                stage = stageType.wireName,
+                                                gameName = "hexlaser",
+                                                levelId = newSeed.toString()
+                                            )
                                         )
-                                    )
-                                },
-                                onStageChange = { newStage, newSeed ->
-                                    navigateTo(
-                                        AppRoute.GameDeepLink(
-                                            username = route.username,
-                                            stage = newStage.wireName,
-                                            gameName = "hexlaser",
-                                            levelId = newSeed.toString()
+                                    },
+                                    onStageChange = { newStage, newSeed ->
+                                        navigateTo(
+                                            AppRoute.GameDeepLink(
+                                                username = route.username,
+                                                stage = newStage.wireName,
+                                                gameName = "hexlaser",
+                                                levelId = newSeed.toString()
+                                            )
                                         )
-                                    )
-                                }
-                            )
+                                    }
+                                )
+                            }
                         }
                     }
 

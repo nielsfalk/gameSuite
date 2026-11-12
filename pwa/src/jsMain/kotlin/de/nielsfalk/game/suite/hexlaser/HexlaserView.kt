@@ -152,7 +152,7 @@ fun HexlaserView(
         }
     }
 
-    LaunchedEffect(version, ongoingDrag, canvasElement) {
+    LaunchedEffect(game, stageType, seed, version, ongoingDrag, canvasElement) {
         val canvas = canvasElement ?: return@LaunchedEffect
         val width = canvas.clientWidth.toDouble()
         val height = canvas.clientHeight.toDouble()
