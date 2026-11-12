@@ -42,7 +42,10 @@ class ServerSmokeTest : FreeSpec({
                 ScoreTestCase("bob", "minesweeper", "beginner", "2", 2300L, -30L),
                 ScoreTestCase("charlie", "minesweeper", "expert", "3", 4500L, 250L),
                 ScoreTestCase("dana", "hexmine", "easy", "4", 1800L, 90L),
-                ScoreTestCase("erin", "hexmine", "custom-7x7-5", "5", 2100L, -40L)
+                ScoreTestCase("erin", "hexmine", "custom-7x7-5", "5", 2100L, -40L),
+                ScoreTestCase("frank", "hexlaser", "absolute_beginner", "6", 900L, 35L),
+                ScoreTestCase("grace", "hexlaser", "hard", "7", 3200L, 120L),
+                ScoreTestCase("heidi", "hexlaser", "nightmare_plus2", "8", 5400L, 240L)
             )
 
             testApplication {
@@ -113,6 +116,12 @@ class ServerSmokeTest : FreeSpec({
 
                 val unknownStageHighscores = jsonClient.get("/highscores/minesweeper/hard/1")
                 assert(unknownStageHighscores.status == HttpStatusCode.BadRequest)
+
+                val unknownHexlaserStagePost = jsonClient.post("/alice/hexlaser/nightmare_plus3/2") {
+                    contentType(ContentType.Application.Json)
+                    setBody(ScoreSubmission(time = 1000L, points = 10L))
+                }
+                assert(unknownHexlaserStagePost.status == HttpStatusCode.BadRequest)
 
                 val validCustomStagePost = jsonClient.post("/alice/minesweeper/custom-9x9-10/1") {
                     contentType(ContentType.Application.Json)
