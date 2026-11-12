@@ -111,6 +111,12 @@ class HexlasarGame(
         stageUpVisible = false
     }
 
+    fun setToggleXY(value: Boolean) {
+        if (toggleXY == value) return
+        toggleXY = value
+        resetGrid(seed)
+    }
+
     fun setAnimationSpendTime(value: Int?) {
         animationSpendTime = value
     }

@@ -73,6 +73,19 @@ class HexlasarGameTest : FreeSpec({
         game.seed shouldBe 99L
         game.grid shouldBe generateHexlaserGrid(StageType.EASY.next(), seed = 99L)
     }
+
+    "toggling orientation regenerates the same seeded stage" {
+        val game = HexlasarGame(StageType.INTERMEDIATE_PLUS, seed = 12345L)
+
+        game.setToggleXY(true)
+
+        game.toggleXY shouldBe true
+        game.grid shouldBe generateHexlaserGrid(
+            StageType.INTERMEDIATE_PLUS,
+            seed = 12345L,
+            toggleXY = true
+        )
+    }
 })
 
 private fun HexlasarGame.solve() {

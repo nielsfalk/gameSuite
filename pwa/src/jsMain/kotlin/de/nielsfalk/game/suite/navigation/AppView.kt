@@ -8,6 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.nielsfalk.game.suite.common.ScoreStorageService
 import de.nielsfalk.game.suite.common.ScoreSyncService
+import de.nielsfalk.game.suite.hexlaser.HexlaserView
+import de.nielsfalk.game.suite.hexlaser.StageType
 import de.nielsfalk.game.suite.hexmine.HexMineView
 import de.nielsfalk.game.suite.minesweeper.MinesweeperStage
 import de.nielsfalk.game.suite.minesweeper.MinesweeperView
@@ -77,7 +79,7 @@ fun AppView(
         }
     }
 
-    fun parseSelectedStage(): MinesweeperStage? = if (selectedStage == "custom") {
+    fun parseMinesweeperStage(): MinesweeperStage? = if (selectedStage == "custom") {
         val width = customWidth.toIntOrNull()
         val height = customHeight.toIntOrNull()
         val mines = customMines.toIntOrNull()
@@ -90,6 +92,16 @@ fun AppView(
         }
     } else {
         MinesweeperStage.parse(selectedStage)
+    }
+
+    fun selectedStageName(): String? = when (selectedGame) {
+        "hexlaser" -> StageType.parse(selectedStage)?.wireName
+        else -> parseMinesweeperStage()?.name
+    }
+
+    fun defaultStageFor(gameName: String): String = when (gameName) {
+        "hexlaser" -> StageType.ABSOLUTE_BEGINNER.wireName
+        else -> MinesweeperStage.Easy.name
     }
 
     Div({ style { lollipopRoot() } }) {
@@ -125,7 +137,7 @@ fun AppView(
             }
 
             is AppRoute.UserHome -> {
-                val parsedStage = parseSelectedStage()
+                val stageName = selectedStageName()
 
                 Div({ style { lollipopCard() } }) {
                     H2({ style { lollipopHeading() } }) { Text("Hello, ${route.username}!") }
@@ -135,7 +147,12 @@ fun AppView(
                         Span({ style { lollipopPill() } }) { Text("Game") }
                         Select({
                             style { lollipopInput() }
-                            onChange { it.value?.let { game -> selectedGame = game } }
+                            onChange {
+                                it.value?.let { game ->
+                                    selectedGame = game
+                                    selectedStage = defaultStageFor(game)
+                                }
+                            }
                         }) {
                             Option("minesweeper", attrs = {
                                 if (selectedGame == "minesweeper") selected()
@@ -143,6 +160,9 @@ fun AppView(
                             Option("hexmine", attrs = {
                                 if (selectedGame == "hexmine") selected()
                             }) { Text("HexMine") }
+                            Option("hexlaser", attrs = {
+                                if (selectedGame == "hexlaser") selected()
+                            }) { Text("Hexlaser") }
                         }
 
                         Span({ style { property("display", "block"); property("height", "0.75rem") } })
@@ -152,18 +172,28 @@ fun AppView(
                             style { lollipopInput() }
                             onChange { it.value?.let { stage -> selectedStage = stage } }
                         }) {
-                            Option(MinesweeperStage.Easy.name, attrs = {
-                                if (selectedStage == MinesweeperStage.Easy.name) selected()
-                            }) { Text("Easy") }
-                            Option(MinesweeperStage.Beginner.name, attrs = {
-                                if (selectedStage == MinesweeperStage.Beginner.name) selected()
-                            }) { Text("Beginner") }
-                            Option(MinesweeperStage.Expert.name, attrs = {
-                                if (selectedStage == MinesweeperStage.Expert.name) selected()
-                            }) { Text("Expert") }
-                            Option("custom", attrs = {
-                                if (selectedStage == "custom") selected()
-                            }) { Text("Custom") }
+                            if (selectedGame == "hexlaser") {
+                                StageType.entries.forEach { stageType ->
+                                    Option(stageType.wireName, attrs = {
+                                        if (selectedStage == stageType.wireName) selected()
+                                    }) {
+                                        Text(stageType.name.replace('_', ' '))
+                                    }
+                                }
+                            } else {
+                                Option(MinesweeperStage.Easy.name, attrs = {
+                                    if (selectedStage == MinesweeperStage.Easy.name) selected()
+                                }) { Text("Easy") }
+                                Option(MinesweeperStage.Beginner.name, attrs = {
+                                    if (selectedStage == MinesweeperStage.Beginner.name) selected()
+                                }) { Text("Beginner") }
+                                Option(MinesweeperStage.Expert.name, attrs = {
+                                    if (selectedStage == MinesweeperStage.Expert.name) selected()
+                                }) { Text("Expert") }
+                                Option("custom", attrs = {
+                                    if (selectedStage == "custom") selected()
+                                }) { Text("Custom") }
+                            }
                         }
 
                         if (selectedStage == "custom") {
@@ -198,11 +228,11 @@ fun AppView(
                         Button({
                             style { lollipopButton() }
                             onClick {
-                                val stage = parsedStage ?: return@onClick
+                                val stage = stageName ?: return@onClick
                                 navigateTo(
                                     AppRoute.GameDeepLink(
                                         username = route.username,
-                                        stage = stage.name,
+                                        stage = stage,
                                         gameName = selectedGame,
                                         levelId = Random.nextLong().toString()
                                     )
@@ -212,9 +242,9 @@ fun AppView(
                             Text("Launch Game")
                         }
 
-                        if (parsedStage == null) {
+                        if (stageName == null) {
                             P({ style { lollipopParagraph() } }) {
-                                Text("Please enter a valid custom stage before launching.")
+                                Text("Please enter a valid stage before launching.")
                             }
                         }
                     }
@@ -249,85 +279,146 @@ fun AppView(
             }
 
             is AppRoute.GameDeepLink -> {
-                val stage = MinesweeperStage.parse(route.stage)
                 val seed = route.levelId.toLongOrNull() ?: route.levelId.hashCode().toLong()
+                val onBack = { navigateTo(AppRoute.UserHome(route.username)) }
 
-                when {
-                    route.gameName != "minesweeper" && route.gameName != "hexmine" -> {
-                        Div({ style { lollipopCard() } }) {
-                            H2({ style { lollipopHeading() } }) { Text("${route.gameName} Game") }
-                            P({ style { lollipopParagraph() } }) {
-                                Span({ style { lollipopPill() } }) { Text("Player: ${route.username}") }
-                                Span({ style { lollipopPill() } }) { Text("Stage: ${route.stage}") }
-                                Span({ style { lollipopPill() } }) { Text("Level: ${route.levelId}") }
-                            }
-                            P({ style { lollipopParagraph() } }) { Text("No game implemented yet for this level.") }
+                when (route.gameName) {
+                    "minesweeper", "hexmine" -> {
+                        val stage = MinesweeperStage.parse(route.stage)
+                        when {
+                            stage == null -> UnknownStageCard(
+                                gameName = route.gameName,
+                                stage = route.stage,
+                                onBack = onBack
+                            )
 
-                            Button({
-                                style { lollipopButtonSecondary() }
-                                onClick { navigateTo(AppRoute.UserHome(route.username)) }
-                            }) {
-                                Text("Back to Home")
-                            }
+                            route.gameName == "minesweeper" -> MinesweeperView(
+                                username = route.username,
+                                stage = stage,
+                                seed = seed,
+                                syncService = syncService,
+                                onBack = onBack,
+                                onNewGame = { newSeed ->
+                                    navigateTo(
+                                        AppRoute.GameDeepLink(
+                                            username = route.username,
+                                            stage = stage.name,
+                                            gameName = "minesweeper",
+                                            levelId = newSeed.toString()
+                                        )
+                                    )
+                                }
+                            )
+
+                            else -> HexMineView(
+                                username = route.username,
+                                stage = stage,
+                                seed = seed,
+                                syncService = syncService,
+                                onBack = onBack,
+                                onNewGame = { newSeed ->
+                                    navigateTo(
+                                        AppRoute.GameDeepLink(
+                                            username = route.username,
+                                            stage = stage.name,
+                                            gameName = "hexmine",
+                                            levelId = newSeed.toString()
+                                        )
+                                    )
+                                }
+                            )
                         }
                     }
 
-                    stage == null -> {
-                        Div({ style { lollipopCard() } }) {
-                            H2({ style { lollipopHeading() } }) { Text("Unknown stage") }
-                            P({ style { lollipopParagraph() } }) {
-                                Text("'${route.stage}' is not a valid ${route.gameName} stage.")
-                            }
-                            Button({
-                                style { lollipopButtonSecondary() }
-                                onClick { navigateTo(AppRoute.UserHome(route.username)) }
-                            }) {
-                                Text("Back to Home")
-                            }
+                    "hexlaser" -> {
+                        val stageType = StageType.parse(route.stage)
+                        if (stageType == null) {
+                            UnknownStageCard(
+                                gameName = route.gameName,
+                                stage = route.stage,
+                                onBack = onBack
+                            )
+                        } else {
+                            HexlaserView(
+                                username = route.username,
+                                stageType = stageType,
+                                seed = seed,
+                                syncService = syncService,
+                                onBack = onBack,
+                                onNewGame = { newSeed ->
+                                    navigateTo(
+                                        AppRoute.GameDeepLink(
+                                            username = route.username,
+                                            stage = stageType.wireName,
+                                            gameName = "hexlaser",
+                                            levelId = newSeed.toString()
+                                        )
+                                    )
+                                },
+                                onStageChange = { newStage, newSeed ->
+                                    navigateTo(
+                                        AppRoute.GameDeepLink(
+                                            username = route.username,
+                                            stage = newStage.wireName,
+                                            gameName = "hexlaser",
+                                            levelId = newSeed.toString()
+                                        )
+                                    )
+                                }
+                            )
                         }
                     }
 
-                    route.gameName == "minesweeper" -> {
-                        MinesweeperView(
-                            username = route.username,
-                            stage = stage,
-                            seed = seed,
-                            syncService = syncService,
-                            onBack = { navigateTo(AppRoute.UserHome(route.username)) },
-                            onNewGame = { newSeed ->
-                                navigateTo(
-                                    AppRoute.GameDeepLink(
-                                        username = route.username,
-                                        stage = stage.name,
-                                        gameName = "minesweeper",
-                                        levelId = newSeed.toString()
-                                    )
-                                )
-                            }
-                        )
-                    }
-
-                    else -> {
-                        HexMineView(
-                            username = route.username,
-                            stage = stage,
-                            seed = seed,
-                            syncService = syncService,
-                            onBack = { navigateTo(AppRoute.UserHome(route.username)) },
-                            onNewGame = { newSeed ->
-                                navigateTo(
-                                    AppRoute.GameDeepLink(
-                                        username = route.username,
-                                        stage = stage.name,
-                                        gameName = "hexmine",
-                                        levelId = newSeed.toString()
-                                    )
-                                )
-                            }
-                        )
-                    }
+                    else -> UnknownGameCard(
+                        gameName = route.gameName,
+                        username = route.username,
+                        stage = route.stage,
+                        levelId = route.levelId,
+                        onBack = onBack
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun UnknownGameCard(
+    gameName: String,
+    username: String,
+    stage: String,
+    levelId: String,
+    onBack: () -> Unit
+) {
+    Div({ style { lollipopCard() } }) {
+        H2({ style { lollipopHeading() } }) { Text("$gameName Game") }
+        P({ style { lollipopParagraph() } }) {
+            Span({ style { lollipopPill() } }) { Text("Player: $username") }
+            Span({ style { lollipopPill() } }) { Text("Stage: $stage") }
+            Span({ style { lollipopPill() } }) { Text("Level: $levelId") }
+        }
+        P({ style { lollipopParagraph() } }) { Text("No game implemented yet for this level.") }
+        Button({
+            style { lollipopButtonSecondary() }
+            onClick { onBack() }
+        }) {
+            Text("Back to Home")
+        }
+    }
+}
+
+@Composable
+private fun UnknownStageCard(gameName: String, stage: String, onBack: () -> Unit) {
+    Div({ style { lollipopCard() } }) {
+        H2({ style { lollipopHeading() } }) { Text("Unknown stage") }
+        P({ style { lollipopParagraph() } }) {
+            Text("'$stage' is not a valid $gameName stage.")
+        }
+        Button({
+            style { lollipopButtonSecondary() }
+            onClick { onBack() }
+        }) {
+            Text("Back to Home")
         }
     }
 }
