@@ -33,22 +33,22 @@ internal val Grid.emptyCells: List<Cell>
 
 class GridGenerator(
     val random: Random = Random.Default,
-    val levelType: LevelType = LevelType.entries.first(),
-    val levelProperties: LevelProperties = levelType.levelProperties.random(random)
+    val stageType: StageType = StageType.entries.first(),
+    val stageProperties: StageProperties = stageType.stageProperties.random(random)
 ) {
     var grid = newGrid()
 
     private fun newGrid() = Grid(
-        levelProperties.x,
-        levelProperties.y,
-        infiniteX = levelType.infiniteX,
-        infiniteY = levelType.infiniteY
+        stageProperties.x,
+        stageProperties.y,
+        infiniteX = stageType.infiniteX,
+        infiniteY = stageType.infiniteY
     )
 
 
     fun generate(): Grid {
         while (true) {
-            levelProperties.run {
+            stageProperties.run {
                 repeat(sourceCount) {
                     generateSource()
                     generateSourceConnections()
@@ -95,7 +95,7 @@ class GridGenerator(
         grid = grid.update(
             grid.cells.filter {
                 it.connections.isNotEmpty() &&
-                        (levelProperties.rotateObvious || it.connections.size != it.neighbors.size) &&
+                        (stageProperties.rotateObvious || it.connections.size != it.neighbors.size) &&
                         it.connections.scrambleAmount > 0
             }
                 .map {
