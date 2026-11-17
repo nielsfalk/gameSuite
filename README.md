@@ -2,6 +2,8 @@
 
 Gamesuite is a multi-module Kotlin game platform.
 
+Play it at https://nielsfalk.github.io/gameSuite/
+
 ## Disclaimer
 
 No one has ever read this code. It is completely vibecoded: written by AI agents, accepted when the tests passed, and only ever checked by clicking around in the app. Use it at your own risk. It comes with no warranty of any kind, express or implied, including but not limited to correctness, fitness for a particular purpose, or suitability for any purpose.
