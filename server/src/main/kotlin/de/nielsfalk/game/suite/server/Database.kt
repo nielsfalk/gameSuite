@@ -2,14 +2,15 @@ package de.nielsfalk.game.suite.server
 
 import de.nielsfalk.game.suite.common.HighscoreSummary
 import de.nielsfalk.game.suite.common.Score
+import de.nielsfalk.game.suite.common.ScoreSummary
+import de.nielsfalk.game.suite.common.UserSummary
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -22,6 +23,7 @@ object ScoresTable : Table("scores") {
     val levelId = varchar("level_id", 100)
     val time = long("time")
     val points = long("points")
+    val won = bool("won").default(true)
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -71,13 +73,23 @@ object DatabaseFactory {
             password = password
         )
         transaction(db) {
-            SchemaUtils.create(ScoresTable)
+            SchemaUtils.createMissingTablesAndColumns(ScoresTable)
         }
     }
 
     suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }
 }
+
+private fun ResultRow.toScore(): Score = Score(
+    username = this[ScoresTable.username],
+    gameName = this[ScoresTable.gameName],
+    stage = this[ScoresTable.stage],
+    levelId = this[ScoresTable.levelId],
+    time = this[ScoresTable.time],
+    points = this[ScoresTable.points],
+    won = this[ScoresTable.won]
+)
 
 class ScoreRepository {
     suspend fun saveScore(score: Score): Score = DatabaseFactory.dbQuery {
@@ -88,6 +100,7 @@ class ScoreRepository {
             it[levelId] = score.levelId
             it[time] = score.time
             it[points] = score.points
+            it[won] = score.won
         }
         score
     }
@@ -96,62 +109,56 @@ class ScoreRepository {
         username: String,
         gameName: String,
         stage: String,
-        levelId: String
+        level: String
     ): List<Score> = DatabaseFactory.dbQuery {
         ScoresTable.selectAll()
             .where {
                 (ScoresTable.username eq username) and
                     (ScoresTable.gameName eq gameName) and
                     (ScoresTable.stage eq stage) and
-                    (ScoresTable.levelId eq levelId)
+                    (ScoresTable.levelId eq level)
             }
-            .orderBy(ScoresTable.points to SortOrder.DESC, ScoresTable.time to SortOrder.ASC)
-            .map {
-                Score(
-                    username = it[ScoresTable.username],
-                    gameName = it[ScoresTable.gameName],
-                    stage = it[ScoresTable.stage],
-                    levelId = it[ScoresTable.levelId],
-                    time = it[ScoresTable.time],
-                    points = it[ScoresTable.points]
-                )
-            }
+            .map { it.toScore() }
+            .sortedWith(ScoreSummary.highscoreOrder)
     }
 
+    /**
+     * The level highscore: the top [limit] won attempts ranked by points and time plus the number of
+     * attempts (won or lost) on that level.
+     */
     suspend fun getHighscores(
         gameName: String,
         stage: String,
-        levelId: String,
+        level: String,
         limit: Int = 10
     ): HighscoreSummary = DatabaseFactory.dbQuery {
-        val query = ScoresTable.selectAll()
+        val all = ScoresTable.selectAll()
             .where {
                 (ScoresTable.gameName eq gameName) and
                     (ScoresTable.stage eq stage) and
-                    (ScoresTable.levelId eq levelId)
+                    (ScoresTable.levelId eq level)
             }
-            .orderBy(ScoresTable.points to SortOrder.DESC, ScoresTable.time to SortOrder.ASC)
-
-        val totalPlays = query.count()
-        val topScores = query.limit(limit).map {
-            Score(
-                username = it[ScoresTable.username],
-                gameName = it[ScoresTable.gameName],
-                stage = it[ScoresTable.stage],
-                levelId = it[ScoresTable.levelId],
-                time = it[ScoresTable.time],
-                points = it[ScoresTable.points]
-            )
-        }
-        val maxPoints = topScores.firstOrNull()?.points
+            .map { it.toScore() }
+        val won = all.filter { it.won }.sortedWith(ScoreSummary.highscoreOrder)
 
         HighscoreSummary(
             gameName = gameName,
             stage = stage,
-            levelId = levelId,
-            topScores = topScores,
-            totalPlays = totalPlays,
-            highestScore = maxPoints
+            levelId = level,
+            topScores = won.take(limit),
+            totalPlays = all.size.toLong(),
+            highestScore = won.firstOrNull()?.points
         )
     }
+
+    /** All scores of one user, used to build the summary endpoint. */
+    suspend fun getScoresOfUser(username: String): List<Score> = DatabaseFactory.dbQuery {
+        ScoresTable.selectAll()
+            .where { ScoresTable.username eq username }
+            .map { it.toScore() }
+    }
+
+    /** Per game and stage aggregates of one user. */
+    suspend fun getSummary(username: String): UserSummary =
+        ScoreSummary.summarizeUser(username, getScoresOfUser(username))
 }

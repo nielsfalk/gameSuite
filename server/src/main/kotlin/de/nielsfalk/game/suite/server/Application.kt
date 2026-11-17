@@ -28,7 +28,8 @@ import kotlinx.serialization.json.Json
 @Serializable
 data class ScoreSubmission(
     val time: Long,
-    val points: Long
+    val points: Long,
+    val won: Boolean = true
 )
 
 private suspend fun ApplicationCall.rejectUnknownGameOrStage(gameName: String, stage: String): Boolean {
@@ -41,6 +42,14 @@ private suspend fun ApplicationCall.rejectUnknownGameOrStage(gameName: String, s
             HttpStatusCode.BadRequest,
             mapOf("error" to "Unknown stage '$stage' for game '$gameName'")
         )
+        return false
+    }
+    return true
+}
+
+private suspend fun ApplicationCall.rejectInvalidLevel(level: String): Boolean {
+    if (!GameCatalog.isValidLevel(level)) {
+        respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid level: $level"))
         return false
     }
     return true
@@ -92,44 +101,54 @@ fun Application.module(repository: ScoreRepository = ScoreRepository()) {
             call.respond(mapOf("status" to "ok"))
         }
 
-        // Highscore summary endpoint
-        get("/highscores/{gameName}/{stage}/{levelId}") {
+        // Highscore summary endpoint: top 10 of one level plus the number of attempts
+        get("/highscores/{gameName}/{stage}/{level}") {
             val gameName = call.parameters["gameName"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing gameName")
             val stage = call.parameters["stage"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing stage")
-            val levelId = call.parameters["levelId"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing levelId")
+            val level = call.parameters["level"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing level")
             if (!call.rejectUnknownGameOrStage(gameName, stage)) return@get
-            val summary = repository.getHighscores(gameName, stage, levelId)
+            if (!call.rejectInvalidLevel(level)) return@get
+            val summary = repository.getHighscores(gameName, stage, level)
             call.respond(summary)
         }
 
-        // Score routes by path: /$username/$gameName/$stage/$levelId
-        get("/{username}/{gameName}/{stage}/{levelId}") {
+        // Per game and stage summary of one user
+        get("/summary/{username}") {
+            val username = call.parameters["username"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing username")
+            call.respond(repository.getSummary(username))
+        }
+
+        // Score routes by path: /{username}/{gameName}/{stage}/{level}
+        get("/{username}/{gameName}/{stage}/{level}") {
             val username = call.parameters["username"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing username")
             val gameName = call.parameters["gameName"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing gameName")
             val stage = call.parameters["stage"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing stage")
-            val levelId = call.parameters["levelId"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing levelId")
+            val level = call.parameters["level"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing level")
             if (!call.rejectUnknownGameOrStage(gameName, stage)) return@get
+            if (!call.rejectInvalidLevel(level)) return@get
 
-            val scores = repository.getScores(username, gameName, stage, levelId)
+            val scores = repository.getScores(username, gameName, stage, level)
             call.respond(scores)
         }
 
         // Post score without auth
-        post("/{username}/{gameName}/{stage}/{levelId}") {
+        post("/{username}/{gameName}/{stage}/{level}") {
             val username = call.parameters["username"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing username")
             val gameName = call.parameters["gameName"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing gameName")
             val stage = call.parameters["stage"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing stage")
-            val levelId = call.parameters["levelId"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing levelId")
+            val level = call.parameters["level"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing level")
             if (!call.rejectUnknownGameOrStage(gameName, stage)) return@post
+            if (!call.rejectInvalidLevel(level)) return@post
 
             val submission = call.receive<ScoreSubmission>()
             val score = Score(
                 username = username,
                 gameName = gameName,
                 stage = stage,
-                levelId = levelId,
+                levelId = level,
                 time = submission.time,
-                points = submission.points
+                points = submission.points,
+                won = submission.won
             )
             val saved = repository.saveScore(score)
             call.respond(HttpStatusCode.Created, saved)

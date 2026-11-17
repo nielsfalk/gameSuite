@@ -8,7 +8,7 @@
 @username = restclient
 @gameName = minesweeper
 @stage = easy
-@levelId = 1
+@level = 1
 
 ### Root
 GET {{host}}/
@@ -17,27 +17,38 @@ GET {{host}}/
 GET {{host}}/health
 
 ### Get scores for a user
-GET {{host}}/{{username}}/{{gameName}}/{{stage}}/{{levelId}}
+GET {{host}}/{{username}}/{{gameName}}/{{stage}}/{{level}}
 
-### Post a score (no authentication required)
-POST {{host}}/{{username}}/{{gameName}}/{{stage}}/{{levelId}}
+### Post a won level (no authentication required)
+POST {{host}}/{{username}}/{{gameName}}/{{stage}}/{{level}}
 Content-Type: application/json
 
 {
   "time": 1500,
-  "points": 120
+  "points": 120,
+  "won": true
 }
 
-### Highscore summary (top 10 + total plays)
-GET {{host}}/highscores/{{gameName}}/{{stage}}/{{levelId}}
+### Post a lost attempt (counted in the summary, never in the highscore)
+POST {{host}}/{{username}}/{{gameName}}/{{stage}}/{{level}}
+Content-Type: application/json
+
+{
+  "time": 60,
+  "points": -40,
+  "won": false
+}
+
+### Level highscore (top 10 + total plays)
+GET {{host}}/highscores/{{gameName}}/{{stage}}/{{level}}
+
+### User summary (levels won/played, best and total points per game+stage)
+GET {{host}}/summary/{{username}}
 
 ### HexMine stage (same stage names as Minesweeper)
 GET {{host}}/highscores/hexmine/expert/1
 
-### Custom Minesweeper stage: custom-<width>x<height>-<mines>
-GET {{host}}/highscores/minesweeper/custom-12x12-24/1
-
-### Hexlaser stages: absolute_beginner, easy, intermediate, intermediate_plus, hard, harder, insane, nightmare, nightmare_plus
+### Hexlaser stages: absolute_beginner, easy, intermediate, intermediate_plus, intermediate_plus2, hard, harder, insane, nightmare, nightmare_plus, nightmare_plus2
 GET {{host}}/highscores/hexlaser/easy/1
 
 ### Rejected: unknown game -> 400
@@ -45,3 +56,9 @@ GET {{host}}/highscores/notagame/easy/1
 
 ### Rejected: unknown stage -> 400
 GET {{host}}/highscores/minesweeper/impossible/1
+
+### Rejected: dropped custom stage -> 400
+GET {{host}}/highscores/minesweeper/custom-12x12-24/1
+
+### Rejected: invalid level -> 400
+GET {{host}}/highscores/minesweeper/easy/0
