@@ -125,6 +125,7 @@ To recreate it, either open **Blueprints → New Blueprint Instance** in the Ren
 - [x] [T35] Server module: `GET /summary/{username}` aggregates per game and stage the levels won, levels played, best points, total points and the highest level played
 - [x] [T36] PWA module: highscore summary for the user under the game logos from the summary endpoint, with a local-score fallback and a "continue at level N" link
 - [x] [T37] PWA module: server base URL defaults to `https://gamesuite-server.onrender.com` with a `gamesuite_server_url` localStorage override, and legacy local scores with non-numeric level ids are ignored in all summaries
+- [x] [T38] Remove `won` from Score model, server database column and submission payload — scores are only posted when a level is won, losses only reset the local win-streak
 
 ## License
 
