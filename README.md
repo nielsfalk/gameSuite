@@ -10,18 +10,35 @@ No one has ever read this code. It is completely vibecoded: written by AI agents
 
 ## Architecture & Modules
 
-- **`shared`**: Game logic, data models, sealed game stage definitions (`de.nielsfalk.game.suite.$gamename` / `de.nielsfalk.game.suite.common`).
+- **`shared`**: Game logic, data models, sealed game stage definitions (`de.nielsfalk.game.suite.$gamename` / `de.nielsfalk.game.suite.common`):
+  - A common game interface describing every game: name, display name, ordered stages, next stage and last stage
+  - Deterministic level seeds derived from game name, stage and level number
 - **`server`**: Ktor backend with PostgreSQL database for score/highscore CRUD APIs:
-  - Route: `/{username}/{gameName}/{stage}/{levelId}`
+  - Score route: `/{username}/{gameName}/{stage}/{level}`
+  - Level highscores: `/highscores/{gameName}/{stage}/{level}`
+  - User summary: `/summary/{username}`
   - Scores can be posted without authentication
   - Scores contain time and signed points
 - **`pwa`**: Kotlin Compose HTML Progressive Web App (hosted on GitHub Pages):
-  - Deep links: `/{username}/{stage}/{gameName}/{levelId}`
+  - Deep links: `/{username}/{gameName}/{stage}/{level}` (same segment order as the server)
+  - Game route: `/{username}/{gameName}` shows the stage selection for one game
   - If no deep link but username in `localStorage`, forwards to `/{username}`
   - If no deep link and no username in `localStorage`, prompts for username
   - Packages: `de.nielsfalk.game.suite.$gamename`, `de.nielsfalk.game.suite.common`, or `de.nielsfalk.game.suite.navigation`
-  - Highscore summary display
+  - Game logo grid, per game+stage highscore summary and per-level highscore dialog
   - Local storage offline caching and resilient background server synchronization (does not fail when server is unreachable)
+
+## Game Shell, Levels & Navigation
+
+All games share one shell and one level model:
+
+- **Levels**: every stage has levels numbered `1..∞`. The level number is hashed together with game name and stage into the seed of the random number generator, so a level number always reproduces the same board.
+- **Deep links** carry the level number, which makes every level shareable and comparable.
+- **Toolbar** (same for every game): `🏠 ‖ << < ↻ > >> ‖ 🏆` — home, 10 levels back, 1 level back, restart the current level, 1 level forward, 10 levels forward, and the highscore of the current level. `<<` and `<` clamp to level 1 and are disabled there; `↻` replays the identical board with a fresh timer. Game-specific actions (minesweeper flag mode, hexlaser hint) sit in a second row as icon buttons.
+- **Home navigation** shows the game logos as inline SVG. The stage selection only appears after a logo was clicked. Under the logos a per game+stage summary for the user shows levels won / played, best points and total points with a link to continue at the highest level played.
+- **Winning**: the winning animation plays first, then the highscore dialog for that level opens automatically with a "next level" action. The dialog lists the top 10 (points descending, time ascending), highlights the player's own best entry and shows total plays. When the server does not respond, the dialog still opens with locally stored scores and an offline hint — being offline is never an error.
+- **Stage up**: three consecutive wins in a session open a stage-up dialog, once per stage and never on the last stage. The streak resets on a loss, on `↻` and on a stage change.
+- **Server base URL** defaults to `https://gamesuite-server.onrender.com` and can be overridden with the `gamesuite_server_url` key in `localStorage` for local development.
 
 ## PWA Hosting: GitHub Pages
 
@@ -93,6 +110,21 @@ To recreate it, either open **Blueprints → New Blueprint Instance** in the Ren
 - [x] [T19] PWA module: navigation fixes (deployment base path, browser back/forward, preserved game/stage selection)
 - [x] [T20] Shared/PWA/server: port hexlaser into `de.nielsfalk.game.suite.hexlaser`, rename levels to stages, seed stage generation with a deterministic default, add the HTML5 canvas PWA view and deep links, and register/score `hexlaser`
 - [x] [T21] Hosting: document Render + Neon deployment, wire Neon connection strings into the server via `DATABASE_URL`, and add an opt-in `DatabaseManualTest` for the real database
+- [ ] [T23] Shared module: deterministic level seeds — `levelSeed(gameName, stage, level)` hashes game name, stage and level number (`1..∞`) into a stable seed, with data-driven reproducibility tests
+- [ ] [T24] Shared module: common game interface (`name`, display name, ordered stages, `nextStage`, `isLastStage`) implemented for minesweeper, hexmine and hexlaser; `GameCatalog` validation built on top of it
+- [ ] [T25] Shared/PWA/server: drop the minesweeper custom stage — only the presets easy, beginner and expert remain, custom parsing and the custom input fields are removed
+- [ ] [T26] Navigation: unify deep links to `/{username}/{gameName}/{stage}/{level}` with numeric level numbers and add the game route `/{username}/{gameName}`; non-numeric legacy level ids fall back to level 1
+- [ ] [T27] PWA module: inline SVG icon set in the common package (`<<`, `<`, `↻`, `>`, `>>`, home, trophy, flag, hint) rendered as reusable icon buttons
+- [ ] [T28] PWA module: shared game shell with the icon toolbar (`🏠 ‖ << < ↻ > >> ‖ 🏆`), clamped and disabled level navigation at level 1, and a second row for game-specific icon buttons; the text buttons "New Game", "Next Grid", "Next Stage", "Retry" and "Back to Home" are removed
+- [ ] [T29] PWA module: minesweeper, hexmine and hexlaser views use the shared game shell, display the level number, and `↻` restarts the identical board with a fresh timer, move count and points
+- [ ] [T30] PWA module: inline SVG game logos and a logo grid on the user home; the stage selection becomes visible only after a game logo was clicked and lives on `/{username}/{gameName}`
+- [ ] [T31] Server module: level highscore endpoint returns the top 10 ordered by points descending then time ascending, plus total plays for that level
+- [ ] [T32] PWA module: per-level highscore dialog (rank, username, points, time, own best highlighted, total plays) opened by the trophy button, with local scores and an offline hint when the server does not respond
+- [ ] [T33] PWA module: after a win the winning animation plays and the highscore dialog opens automatically with a "next level" action
+- [ ] [T34] Shared/PWA modules: stage up after three consecutive wins in a session for every game — dialog shown once per stage, never on the last stage, streak reset on loss, on `↻` and on stage change
+- [ ] [T35] Server module: `GET /summary/{username}` aggregates per game and stage the levels won, levels played, best points, total points and the highest level played
+- [ ] [T36] PWA module: highscore summary for the user under the game logos from the summary endpoint, with a local-score fallback and a "continue at level N" link
+- [ ] [T37] PWA module: server base URL defaults to `https://gamesuite-server.onrender.com` with a `gamesuite_server_url` localStorage override, and legacy local scores with non-numeric level ids are ignored in all summaries
 
 ## License
 
