@@ -17,6 +17,32 @@ Gamesuite is a multi-module Kotlin game platform.
   - Highscore summary display
   - Local storage offline caching and resilient background server synchronization (does not fail when server is unreachable)
 
+## Server Hosting: Render + Neon
+
+The server is deployed to **Render** (web service) and the database is **Neon** (serverless PostgreSQL). Both use free tiers, so hosting costs $0 for low traffic. The PWA is hosted separately on GitHub Pages, so the server only has to serve the JSON API with CORS.
+
+### Neon (database)
+
+- Project `my-first-project` (`cool-mode-61763762`), branch `production`, database `neondb`.
+- Region: AWS Frankfurt (`aws-eu-central-1`) — must match the Render region (Frankfurt) to keep query latency low.
+- The free plan gives 100 compute-hours/month, 1 GB storage and 5 GB egress, and never pauses or deletes the project. Compute scales to zero after 5 minutes idle and wakes on the next query.
+- Locally, `neon init` wrote the connection strings to `.env.local` (git-ignored). `./gradlew :server:run` and `./gradlew :server:databaseManualTest` load that file; the regular `:server:test` task stays on in-memory H2.
+
+### Render (server)
+
+Create a Web Service from this repository:
+
+- **Region:** Frankfurt (EU Central) — must match the Neon region.
+- **Build command:** `./gradlew :server:installDist`
+- **Start command:** `server/build/install/server/bin/server`
+- **Environment:** `DATABASE_URL` = the Neon connection string (credentials embedded, `sslmode=require`). The server converts it to JDBC via `postgresUrlToJdbc`; alternatively set `DB_URL`, `DB_USER` and `DB_PASSWORD`.
+- **Instance type:** Free. The service sleeps after ~15 minutes idle, and the first request afterwards takes 30–60 seconds (JVM startup). Background score sync in the PWA makes this acceptable.
+
+Deployment requires two code changes that do not exist yet:
+
+- `Application.kt:50` hardcodes port `8080`; Render provides the port in the `PORT` environment variable, so the server must read `System.getenv("PORT")`.
+- There is no Dockerfile; `:server:installDist` (from the `application` plugin) produces the runnable distribution used by the start command above.
+
 ## Testing Strategy
 
 - Tests use **Kotest FreeSpec** and **data-driven testing** (`withData` / `table` / `forAll`).
@@ -45,6 +71,7 @@ Gamesuite is a multi-module Kotlin game platform.
 - [x] [T18] Shared/PWA modules: `HexMine`, a Minesweeper variant on a hexagonal grid using the shared `HexGrid`
 - [x] [T19] PWA module: navigation fixes (deployment base path, browser back/forward, preserved game/stage selection)
 - [x] [T20] Shared/PWA/server: port hexlaser into `de.nielsfalk.game.suite.hexlaser`, rename levels to stages, seed stage generation with a deterministic default, add the HTML5 canvas PWA view and deep links, and register/score `hexlaser`
+- [x] [T21] Hosting: document Render + Neon deployment, wire Neon connection strings into the server via `DATABASE_URL`, and add an opt-in `DatabaseManualTest` for the real database
 
 ## License
 
