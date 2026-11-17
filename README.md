@@ -42,10 +42,13 @@ Create a Web Service from this repository:
 - **Environment:** `DATABASE_URL` = the Neon connection string (credentials embedded, `sslmode=require`). The server converts it to JDBC via `postgresUrlToJdbc`; alternatively set `DB_URL`, `DB_USER` and `DB_PASSWORD`.
 - **Instance type:** Free. The service sleeps after ~15 minutes idle, and the first request afterwards takes 30–60 seconds (JVM startup). Background score sync in the PWA makes this acceptable.
 
-Deployment requires two code changes that do not exist yet:
+The repository contains everything Render needs:
 
-- `Application.kt:50` hardcodes port `8080`; Render provides the port in the `PORT` environment variable, so the server must read `System.getenv("PORT")`.
-- There is no Dockerfile; `:server:installDist` (from the `application` plugin) produces the runnable distribution used by the start command above.
+- `Dockerfile`: multi-stage build that runs `./gradlew :server:installDist` and starts the generated distribution (`/app/bin/server`).
+- `render.yaml`: a Blueprint that creates the free `gamesuite-server` web service in Frankfurt with health check `/health`. The `DATABASE_URL` environment variable is marked `sync: false`, so Render asks for the Neon connection string on first setup.
+- `Application.kt` reads the `PORT` environment variable (falling back to `8080`), as Render assigns the port at runtime.
+
+To create the service, either open **Blueprints → New Blueprint Instance** in the Render dashboard and select this repository (Render reads `render.yaml`), or open **New → Web Service**, choose the Docker runtime and set `DATABASE_URL` manually.
 
 ## Testing Strategy
 
