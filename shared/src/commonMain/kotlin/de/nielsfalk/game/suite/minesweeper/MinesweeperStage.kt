@@ -5,9 +5,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * A Minesweeper difficulty. The [name] is the value used in deep links.
+ * A Minesweeper difficulty. The [name] is the value used in deep links and score routes.
  *
- * Custom stages encode their parameters in the name, e.g. `custom-12x10-20`.
+ * Stages are fixed presets: a level of a stage is identified by its level number, not by board
+ * parameters, so every stage can be numbered and reproduced from its level number alone.
  */
 @Serializable
 sealed interface MinesweeperStage : GameStage {
@@ -44,57 +45,9 @@ sealed interface MinesweeperStage : GameStage {
         override val name: String = "expert"
     }
 
-    @Serializable
-    @SerialName("custom")
-    data class Custom(
-        override val width: Int,
-        override val height: Int,
-        override val mines: Int
-    ) : MinesweeperStage {
-        init {
-            require(width in MIN_SIZE..MAX_SIZE) {
-                "width must be between $MIN_SIZE and $MAX_SIZE, was $width"
-            }
-            require(height in MIN_SIZE..MAX_SIZE) {
-                "height must be between $MIN_SIZE and $MAX_SIZE, was $height"
-            }
-            require(mines >= 1) { "mines must be at least 1, was $mines" }
-            require(mines <= cells - SAFE_FIRST_CLICK_CELLS) {
-                "mines must leave room for a safe first click (at most ${cells - SAFE_FIRST_CLICK_CELLS}), was $mines"
-            }
-        }
-
-        override val name: String get() = "custom-${width}x${height}-$mines"
-
-        companion object {
-            private val pattern = Regex("^custom-(\\d+)x(\\d+)-(\\d+)$")
-
-            fun parse(encoded: String): Custom? {
-                val match = pattern.matchEntire(encoded) ?: return null
-                val (width, height, mines) = match.destructured
-                return runCatching {
-                    Custom(
-                        width = width.toInt(),
-                        height = height.toInt(),
-                        mines = mines.toInt()
-                    )
-                }.getOrNull()
-            }
-        }
-    }
-
     companion object {
-        const val MIN_SIZE: Int = 5
-        const val MAX_SIZE: Int = 30
-        const val SAFE_FIRST_CLICK_CELLS: Int = 9
-
         val presets: List<MinesweeperStage> = listOf(Easy, Beginner, Expert)
 
-        fun parse(encoded: String): MinesweeperStage? = when (encoded) {
-            Easy.name -> Easy
-            Beginner.name -> Beginner
-            Expert.name -> Expert
-            else -> Custom.parse(encoded)
-        }
+        fun parse(encoded: String): MinesweeperStage? = presets.firstOrNull { it.name == encoded }
     }
 }

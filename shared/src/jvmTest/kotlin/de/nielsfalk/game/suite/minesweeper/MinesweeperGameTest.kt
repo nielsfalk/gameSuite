@@ -33,7 +33,7 @@ class MinesweeperGameTest : FreeSpec({
                 1234L
             ).forEach { seed ->
                 "seed $seed" {
-                    val game = MinesweeperGame(MinesweeperStage.Custom(9, 9, 10), seed = seed)
+                    val game = MinesweeperGame(MinesweeperStage.Easy, seed = seed)
                     game.reveal(4, 4)
 
                     assert(!game.cellAt(4, 4).hasMine)
@@ -45,7 +45,7 @@ class MinesweeperGameTest : FreeSpec({
         }
 
         "reproduces the same board for the same seed and first click" {
-            val stage = MinesweeperStage.Custom(9, 9, 10)
+            val stage = MinesweeperStage.Easy
             val first = MinesweeperGame(stage, seed = 99L)
             val second = MinesweeperGame(stage, seed = 99L)
 
@@ -56,7 +56,7 @@ class MinesweeperGameTest : FreeSpec({
         }
 
         "produces a different board for a different seed" {
-            val stage = MinesweeperStage.Custom(9, 9, 10)
+            val stage = MinesweeperStage.Easy
             val first = MinesweeperGame(stage, seed = 1L)
             val second = MinesweeperGame(stage, seed = 2L)
 
@@ -135,7 +135,7 @@ class MinesweeperGameTest : FreeSpec({
         }
 
         "wins when every safe cell is revealed" {
-            val game = MinesweeperGame(MinesweeperStage.Custom(5, 5, 1), seed = 7L)
+            val game = MinesweeperGame(MinesweeperStage.Easy, seed = 7L)
             game.reveal(2, 2)
 
             game.coordinates().forEach { (x, y) ->
@@ -150,7 +150,7 @@ class MinesweeperGameTest : FreeSpec({
         }
 
         "automatically flags all mines when the game is won" {
-            val game = MinesweeperGame(MinesweeperStage.Custom(5, 5, 1), seed = 7L)
+            val game = MinesweeperGame(MinesweeperStage.Easy, seed = 7L)
             game.reveal(2, 2)
 
             game.coordinates().forEach { (x, y) ->
@@ -170,7 +170,7 @@ class MinesweeperGameTest : FreeSpec({
         }
 
         "computes points as negative reveal and flag costs" {
-            val game = MinesweeperGame(MinesweeperStage.Custom(9, 9, 10), seed = 5L)
+            val game = MinesweeperGame(MinesweeperStage.Easy, seed = 5L)
             game.reveal(0, 0)
 
             val hidden = game.coordinates().first { (x, y) -> !game.cellAt(x, y).revealed }

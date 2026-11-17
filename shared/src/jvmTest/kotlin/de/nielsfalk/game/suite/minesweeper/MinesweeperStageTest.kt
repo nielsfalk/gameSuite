@@ -1,6 +1,5 @@
 package de.nielsfalk.game.suite.minesweeper
 
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -41,18 +40,13 @@ class MinesweeperStageTest : FreeSpec({
             }
         }
 
-        "parses custom stages from their encoded name" - {
-            val stage = MinesweeperStage.Custom(width = 12, height = 10, mines = 20)
-
-            assert(stage.name == "custom-12x10-20")
-            assert(MinesweeperStage.parse("custom-12x10-20") == stage)
-        }
-
-        "returns null for unknown or malformed stage names" - {
+        "returns null for unknown or legacy stage names" - {
             listOf(
                 "",
                 "unknown",
+                "hard",
                 "custom",
+                "custom-12x10-20",
                 "custom-12x10",
                 "custom-12x10-20-30",
                 "custom-ax10-20",
@@ -66,34 +60,8 @@ class MinesweeperStageTest : FreeSpec({
             }
         }
 
-        "rejects custom stages outside the allowed bounds" {
-            shouldThrow<IllegalArgumentException> {
-                MinesweeperStage.Custom(width = 4, height = 10, mines = 5)
-            }
-            shouldThrow<IllegalArgumentException> {
-                MinesweeperStage.Custom(width = 31, height = 10, mines = 5)
-            }
-            shouldThrow<IllegalArgumentException> {
-                MinesweeperStage.Custom(width = 10, height = 4, mines = 5)
-            }
-            shouldThrow<IllegalArgumentException> {
-                MinesweeperStage.Custom(width = 10, height = 10, mines = 0)
-            }
-            shouldThrow<IllegalArgumentException> {
-                MinesweeperStage.Custom(width = 5, height = 5, mines = 17)
-            }
-        }
-
-        "accepts the maximum safe mine count for a custom stage" {
-            val stage = MinesweeperStage.Custom(width = 5, height = 5, mines = 16)
-
-            assert(stage.cells - MinesweeperStage.SAFE_FIRST_CLICK_CELLS == stage.mines)
-        }
-
-        "serializes presets and custom stages as a sealed hierarchy" - {
-            val stages = MinesweeperStage.presets + MinesweeperStage.Custom(width = 7, height = 8, mines = 9)
-
-            stages.forEach { stage ->
+        "serializes the presets as a sealed hierarchy" - {
+            MinesweeperStage.presets.forEach { stage ->
                 "round-trip ${stage.name}" {
                     val json = Json.encodeToString<MinesweeperStage>(stage)
                     val decoded = Json.decodeFromString<MinesweeperStage>(json)
