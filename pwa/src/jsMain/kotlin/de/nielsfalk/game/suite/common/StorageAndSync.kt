@@ -67,10 +67,9 @@ class ScoreSyncService(
     suspend fun pushScore(score: Score): SyncStatus =
         try {
             withTimeoutOrNull(ServerConfig.REQUEST_TIMEOUT_MILLIS) {
-                val payload = json(
-                    "time" to score.time,
-                    "points" to score.points
-                )
+                val payload = js("({ time: 0, points: 0 })")
+                payload.time = score.time as Number
+                payload.points = score.points as Number
                 val url = "$serverBaseUrl/${score.username}/${score.gameName}/${score.stage}/${score.levelId}"
                 val response = window.fetch(
                     url,
