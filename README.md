@@ -2,6 +2,10 @@
 
 Gamesuite is a multi-module Kotlin game platform.
 
+## Disclaimer
+
+No one has ever read this code. It is completely vibecoded: written by AI agents, accepted when the tests passed, and only ever checked by clicking around in the app. Use it at your own risk. It comes with no warranty of any kind, express or implied, including but not limited to correctness, fitness for a particular purpose, or suitability for any purpose.
+
 ## Architecture & Modules
 
 - **`shared`**: Game logic, data models, sealed game stage definitions (`de.nielsfalk.game.suite.$gamename` / `de.nielsfalk.game.suite.common`).
@@ -51,7 +55,7 @@ Deployment requires two code changes that do not exist yet:
 
 ## Setup Tasks
 
-- [x] [T01] Project initialization: MIT License, agents.md commit guidelines, gitignore
+- [x] [T01] Project initialization: MIT License, agents.md mot guidelines, gitignore
 - [x] [T02] Multi-module Gradle Kotlin DSL configuration & wrapper setup
 - [x] [T03] Shared module: Game logic models, sealed stage classes, and Kotest FreeSpec data-driven smoketests
 - [x] [T04] Server module: Ktor server with PostgreSQL support, score CRUD endpoints, and Kotest FreeSpec smoketests
