@@ -26,28 +26,33 @@ import kotlin.random.Random
 /** How long the winning animation runs before the highscore dialog opens. */
 const val WIN_ANIMATION_MILLIS: Long = 2000L
 
-/** Renders a simple SVG icon from the inline icon markup. */
+/**
+ * Renders [icon] as inline SVG. Uses the DOM ref callback to set `innerHTML` on the empty Div,
+ * which accepts the raw SVG markup.
+ */
 @Composable
 fun SvgIcon(icon: GameIcon, sizePx: Int = 22) {
-    val raw = Icons.markup(icon, sizePx)
-    Span({
-        classes("gamesuite-icon-slot")
+    Div({
         style { property("display", "inline-flex") }
-    }) {
-        // The JS init script swaps these for inner HTML
-        Text(raw)
-    }
+        ref { ref ->
+            ref.asDynamic().innerHTML = Icons.markup(icon, sizePx)
+            onDispose { }
+        }
+    })
 }
 
-/** Renders arbitrary inline SVG markup. */
+/**
+ * Renders arbitrary inline SVG markup, used for game logos.
+ */
 @Composable
 fun SvgMarkup(markup: String) {
     Div({
-        classes("gamesuite-icon-slot")
         style { property("display", "inline-flex") }
-    }) {
-        Text(markup)
-    }
+        ref { ref ->
+            ref.asDynamic().innerHTML = markup
+            onDispose { }
+        }
+    })
 }
 
 /** A round icon button of the game toolbar. */
@@ -59,12 +64,13 @@ fun IconButton(
     active: Boolean = false
 ) {
     Button({
-        ref {
-            this.asDynamic().setAttribute("title", icon.label)
-            this.asDynamic().setAttribute("aria-label", icon.label)
-            this.asDynamic().setAttribute("aria-disabled", (!enabled).toString())
-        }
         style { lollipopIconButton(enabled = enabled, active = active) }
+        ref { ref ->
+            val el = ref.asDynamic()
+            el.setAttribute("title", icon.label)
+            el.setAttribute("aria-label", icon.label)
+            el.setAttribute("aria-disabled", (!enabled).toString())
+        }
         onClick { if (enabled) onClick() }
     }) {
         SvgIcon(icon)
@@ -136,7 +142,7 @@ fun GameShell(
             Span({ style { lollipopLevelPill() } }) { Text("Level $level") }
         }
 
-        ValuedStatusBar(statusPills)
+        StatusBar(pills = statusPills)
 
         P({ style { lollipopParagraph() } }) { Text(message) }
 
@@ -155,7 +161,7 @@ fun GameShell(
 }
 
 @Composable
-private fun ValuedStatusBar(pills: List<String>) {
+private fun StatusBar(pills: List<String>) {
     if (pills.isEmpty()) return
     Div({
         style {

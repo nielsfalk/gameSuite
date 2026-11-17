@@ -110,21 +110,21 @@ To recreate it, either open **Blueprints → New Blueprint Instance** in the Ren
 - [x] [T19] PWA module: navigation fixes (deployment base path, browser back/forward, preserved game/stage selection)
 - [x] [T20] Shared/PWA/server: port hexlaser into `de.nielsfalk.game.suite.hexlaser`, rename levels to stages, seed stage generation with a deterministic default, add the HTML5 canvas PWA view and deep links, and register/score `hexlaser`
 - [x] [T21] Hosting: document Render + Neon deployment, wire Neon connection strings into the server via `DATABASE_URL`, and add an opt-in `DatabaseManualTest` for the real database
-- [ ] [T23] Shared module: deterministic level seeds — `levelSeed(gameName, stage, level)` hashes game name, stage and level number (`1..∞`) into a stable seed, with data-driven reproducibility tests
-- [ ] [T24] Shared module: common game interface (`name`, display name, ordered stages, `nextStage`, `isLastStage`) implemented for minesweeper, hexmine and hexlaser; `GameCatalog` validation built on top of it
-- [ ] [T25] Shared/PWA/server: drop the minesweeper custom stage — only the presets easy, beginner and expert remain, custom parsing and the custom input fields are removed
-- [ ] [T26] Navigation: unify deep links to `/{username}/{gameName}/{stage}/{level}` with numeric level numbers and add the game route `/{username}/{gameName}`; non-numeric legacy level ids fall back to level 1
-- [ ] [T27] PWA module: inline SVG icon set in the common package (`<<`, `<`, `↻`, `>`, `>>`, home, trophy, flag, hint) rendered as reusable icon buttons
-- [ ] [T28] PWA module: shared game shell with the icon toolbar (`🏠 ‖ << < ↻ > >> ‖ 🏆`), clamped and disabled level navigation at level 1, and a second row for game-specific icon buttons; the text buttons "New Game", "Next Grid", "Next Stage", "Retry" and "Back to Home" are removed
-- [ ] [T29] PWA module: minesweeper, hexmine and hexlaser views use the shared game shell, display the level number, and `↻` restarts the identical board with a fresh timer, move count and points
-- [ ] [T30] PWA module: inline SVG game logos and a logo grid on the user home; the stage selection becomes visible only after a game logo was clicked and lives on `/{username}/{gameName}`
-- [ ] [T31] Server module: level highscore endpoint returns the top 10 ordered by points descending then time ascending, plus total plays for that level
-- [ ] [T32] PWA module: per-level highscore dialog (rank, username, points, time, own best highlighted, total plays) opened by the trophy button, with local scores and an offline hint when the server does not respond
-- [ ] [T33] PWA module: after a win the winning animation plays and the highscore dialog opens automatically with a "next level" action
-- [ ] [T34] Shared/PWA modules: stage up after three consecutive wins in a session for every game — dialog shown once per stage, never on the last stage, streak reset on loss, on `↻` and on stage change
-- [ ] [T35] Server module: `GET /summary/{username}` aggregates per game and stage the levels won, levels played, best points, total points and the highest level played
-- [ ] [T36] PWA module: highscore summary for the user under the game logos from the summary endpoint, with a local-score fallback and a "continue at level N" link
-- [ ] [T37] PWA module: server base URL defaults to `https://gamesuite-server.onrender.com` with a `gamesuite_server_url` localStorage override, and legacy local scores with non-numeric level ids are ignored in all summaries
+- [x] [T23] Shared module: deterministic level seeds — `levelSeed(gameName, stage, level)` hashes game name, stage and level number (`1..∞`) into a stable seed, with data-driven reproducibility tests
+- [x] [T24] Shared module: common game interface (`name`, display name, ordered stages, `nextStage`, `isLastStage`) implemented for minesweeper, hexmine and hexlaser; `GameCatalog` validation built on top of it
+- [x] [T25] Shared/PWA/server: drop the minesweeper custom stage — only the presets easy, beginner and expert remain, custom parsing and the custom input fields are removed
+- [x] [T26] Navigation: unify deep links to `/{username}/{gameName}/{stage}/{level}` with numeric level numbers and add the game route `/{username}/{gameName}`; non-numeric legacy level ids fall back to level 1
+- [x] [T27] PWA module: inline SVG icon set in the common package (`<<`, `<`, `↻`, `>`, `>>`, home, trophy, flag, hint) rendered as reusable icon buttons
+- [x] [T28] PWA module: shared game shell with the icon toolbar (`🏠 ‖ << < ↻ > >> ‖ 🏆`), clamped and disabled level navigation at level 1, and a second row for game-specific icon buttons; the text buttons "New Game", "Next Grid", "Next Stage", "Retry" and "Back to Home" are removed
+- [x] [T29] PWA module: minesweeper, hexmine and hexlaser views use the shared game shell, display the level number, and `↻` restarts the identical board with a fresh timer, move count and points
+- [x] [T30] PWA module: inline SVG game logos and a logo grid on the user home; the stage selection becomes visible only after a game logo was clicked and lives on `/{username}/{gameName}`
+- [x] [T31] Server module: level highscore endpoint returns the top 10 ordered by points descending then time ascending, plus total plays for that level
+- [x] [T32] PWA module: per-level highscore dialog (rank, username, points, time, own best highlighted, total plays) opened by the trophy button, with local scores and an offline hint when the server does not respond
+- [x] [T33] PWA module: after a win the winning animation plays and the highscore dialog opens automatically with a "next level" action
+- [x] [T34] Shared/PWA modules: stage up after three consecutive wins in a session for every game — dialog shown once per stage, never on the last stage, streak reset on loss, on `↻` and on stage change
+- [x] [T35] Server module: `GET /summary/{username}` aggregates per game and stage the levels won, levels played, best points, total points and the highest level played
+- [x] [T36] PWA module: highscore summary for the user under the game logos from the summary endpoint, with a local-score fallback and a "continue at level N" link
+- [x] [T37] PWA module: server base URL defaults to `https://gamesuite-server.onrender.com` with a `gamesuite_server_url` localStorage override, and legacy local scores with non-numeric level ids are ignored in all summaries
 
 ## License
 
