@@ -2,7 +2,7 @@
     "name": "Gamesuite",
     "short_name": "Gamesuite",
     "description": "Gamesuite - a multi-module Kotlin game platform PWA",
-    "start_url": "/",
+    "start_url": "./",
     "display": "standalone",
     "background_color": "#12122b",
     "theme_color": "#12122b",

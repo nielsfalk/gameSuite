@@ -1,0 +1,54 @@
+name: Deploy PWA to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build PWA distribution
+        run: ./gradlew :pwa:jsBrowserDistribution --no-daemon
+
+      - name: Create 404 fallback for deep links
+        run: |
+          dist=pwa/build/dist/js/productionExecutable
+          sed -e 's#src="gameSuite-pwa.js"#src="/gameSuite/gameSuite-pwa.js"#' \
+              -e 's#href="manifest.json"#href="/gameSuite/manifest.json"#' \
+              "$dist/index.html" > "$dist/404.html"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pwa/build/dist/js/productionExecutable
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

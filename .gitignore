@@ -14,3 +14,8 @@ out/
 .env.*
 .neon
 node_modules/
+
+# Neon CLI scaffolding (not used by the Kotlin server)
+neon.ts
+package.json
+package-lock.json

@@ -21,6 +21,16 @@ No one has ever read this code. It is completely vibecoded: written by AI agents
   - Highscore summary display
   - Local storage offline caching and resilient background server synchronization (does not fail when server is unreachable)
 
+## PWA Hosting: GitHub Pages
+
+The PWA is deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `master`:
+
+- The workflow runs `./gradlew :pwa:jsBrowserDistribution` and publishes `pwa/build/dist/js/productionExecutable`.
+- It copies `index.html` to `404.html` (with absolute `/gameSuite/...` asset URLs), so deep links such as `/gameSuite/{username}/{stage}/{gameName}/{levelId}` load the app instead of a plain GitHub 404.
+- The app derives its base path from the `gameSuite-pwa.js` script URL, so it works under the `/gameSuite/` subpath.
+
+One-time setup: in the repository settings, open **Pages → Build and deployment** and set **Source** to **GitHub Actions**. The site is then available at https://nielsfalk.github.io/gameSuite/.
+
 ## Server Hosting: Render + Neon
 
 The server is deployed to **Render** (web service) and the database is **Neon** (serverless PostgreSQL). Both use free tiers, so hosting costs $0 for low traffic. The PWA is hosted separately on GitHub Pages, so the server only has to serve the JSON API with CORS.
@@ -48,7 +58,9 @@ The repository contains everything Render needs:
 - `render.yaml`: a Blueprint that creates the free `gamesuite-server` web service in Frankfurt with health check `/health`. The `DATABASE_URL` environment variable is marked `sync: false`, so Render asks for the Neon connection string on first setup.
 - `Application.kt` reads the `PORT` environment variable (falling back to `8080`), as Render assigns the port at runtime.
 
-To create the service, either open **Blueprints → New Blueprint Instance** in the Render dashboard and select this repository (Render reads `render.yaml`), or open **New → Web Service**, choose the Docker runtime and set `DATABASE_URL` manually.
+The deployed service is live at **https://gamesuite-server.onrender.com** (health check: `/health`).
+
+To recreate it, either open **Blueprints → New Blueprint Instance** in the Render dashboard and select this repository (Render reads `render.yaml`), or open **New → Web Service**, choose the Docker runtime and set `DATABASE_URL` manually.
 
 ## Testing Strategy
 
