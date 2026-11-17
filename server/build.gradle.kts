@@ -48,3 +48,32 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+fun ProcessForkOptions.loadEnvFile(file: File) {
+    if (!file.exists()) return
+    file.readLines()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && !it.startsWith("#") && "=" in it }
+        .forEach { line ->
+            val (key, value) = line.split("=", limit = 2)
+            environment(key.trim(), value.trim().trim('"', '\''))
+        }
+}
+
+// Local secrets (e.g. Neon DATABASE_URL written by `neon init`) live in the git-ignored root .env.local.
+// Only `run` and `databaseManualTest` load them; the regular `test` task keeps using in-memory H2.
+tasks.named<JavaExec>("run") {
+    loadEnvFile(rootProject.file(".env.local"))
+}
+
+tasks.register<Test>("databaseManualTest") {
+    group = "verification"
+    description = "Runs DatabaseManualTest against DATABASE_URL/DB_URL from .env.local or the environment"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching("de.nielsfalk.game.suite.server.DatabaseManualTest")
+    }
+    loadEnvFile(rootProject.file(".env.local"))
+}

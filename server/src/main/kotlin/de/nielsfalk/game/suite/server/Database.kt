@@ -26,12 +26,43 @@ object ScoresTable : Table("scores") {
     override val primaryKey = PrimaryKey(id)
 }
 
+data class JdbcConfig(val url: String, val user: String, val password: String)
+
+/**
+ * Converts a libpq-style URL (`postgresql://user:password@host/db?sslmode=require`, as provided by Neon in
+ * `DATABASE_URL`) into a JDBC URL plus separate credentials. Only `sslmode` is kept as a query parameter.
+ */
+fun postgresUrlToJdbc(databaseUrl: String): JdbcConfig {
+    val uri = java.net.URI(databaseUrl)
+    require(uri.scheme == "postgresql" || uri.scheme == "postgres") { "Unsupported scheme: ${uri.scheme}" }
+    val decode = { s: String -> java.net.URLDecoder.decode(s, Charsets.UTF_8) }
+    val (user, password) = (uri.rawUserInfo ?: "").split(":", limit = 2).let {
+        decode(it[0]) to decode(it.getOrElse(1) { "" })
+    }
+    val sslmode = uri.rawQuery?.split("&")
+        ?.map { it.split("=", limit = 2) }
+        ?.firstOrNull { it[0] == "sslmode" }
+        ?.getOrNull(1)
+    val port = if (uri.port == -1) "" else ":${uri.port}"
+    val query = sslmode?.let { "?sslmode=$it" } ?: ""
+    return JdbcConfig("jdbc:postgresql://${uri.host}$port${uri.rawPath}$query", user, password)
+}
+
+private fun defaultJdbcConfig(): JdbcConfig {
+    System.getenv("DB_URL")?.let {
+        return JdbcConfig(it, System.getenv("DB_USER") ?: "sa", System.getenv("DB_PASSWORD") ?: "")
+    }
+    System.getenv("DATABASE_URL")?.let { return postgresUrlToJdbc(it) }
+    return JdbcConfig("jdbc:h2:mem:gamesuite;DB_CLOSE_DELAY=-1", "sa", "")
+}
+
 object DatabaseFactory {
     fun init(
-        url: String = System.getenv("DB_URL") ?: "jdbc:h2:mem:gamesuite;DB_CLOSE_DELAY=-1",
+        config: JdbcConfig = defaultJdbcConfig(),
+        url: String = config.url,
         driver: String = if (url.startsWith("jdbc:postgresql:")) "org.postgresql.Driver" else "org.h2.Driver",
-        user: String = System.getenv("DB_USER") ?: "sa",
-        password: String = System.getenv("DB_PASSWORD") ?: ""
+        user: String = config.user,
+        password: String = config.password
     ) {
         val db = Database.connect(
             url = url,
