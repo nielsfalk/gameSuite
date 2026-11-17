@@ -35,7 +35,7 @@ class NavigationSmokeTest : FreeSpec({
 
         "should fall back to level 1 for legacy random level ids" - {
             listOf(
-                "/alice/minesweeper/easy/123456789",
+                "/alice/minesweeper/easy/1234567890123456789",
                 "/alice/minesweeper/easy/abc",
                 "/alice/minesweeper/easy/0"
             ).forEach { path ->

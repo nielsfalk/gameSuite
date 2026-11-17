@@ -3,48 +3,54 @@ package de.nielsfalk.game.suite.hexmine
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import de.nielsfalk.game.suite.common.Score
+import de.nielsfalk.game.suite.common.LevelSeed
 import de.nielsfalk.game.suite.common.ScoreSyncService
+import de.nielsfalk.game.suite.common.SuiteGame
 import de.nielsfalk.game.suite.minesweeper.MinesweeperStage
 import de.nielsfalk.game.suite.minesweeper.MinesweeperStatus
-import de.nielsfalk.game.suite.minesweeper.minesweeperControls
 import de.nielsfalk.game.suite.minesweeper.minesweeperHint
-import de.nielsfalk.game.suite.minesweeper.minesweeperStatusBar
-import de.nielsfalk.game.suite.navigation.lollipopButton
-import de.nielsfalk.game.suite.navigation.lollipopButtonSecondary
-import de.nielsfalk.game.suite.navigation.lollipopCard
-import de.nielsfalk.game.suite.navigation.lollipopHeading
-import de.nielsfalk.game.suite.navigation.lollipopParagraph
-import de.nielsfalk.game.suite.navigation.lollipopPill
+import de.nielsfalk.game.suite.navigation.GameIcon
+import de.nielsfalk.game.suite.navigation.GameSessionDialogs
+import de.nielsfalk.game.suite.navigation.GameShell
+import de.nielsfalk.game.suite.navigation.IconButton
+import de.nielsfalk.game.suite.navigation.WinConfetti
+import de.nielsfalk.game.suite.navigation.rememberGameSession
+import de.nielsfalk.game.suite.navigation.stageLabelOf
 import kotlinx.coroutines.delay
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import kotlin.js.Date
-import kotlin.random.Random
 
+/** HexMine of one numbered level, seeded by the level number. */
 @Composable
 fun HexMineView(
     username: String,
+    gameInfo: SuiteGame,
     stage: MinesweeperStage,
-    seed: Long,
+    level: Int,
     syncService: ScoreSyncService,
-    onBack: () -> Unit,
-    onNewGame: (Long) -> Unit
+    onHome: () -> Unit,
+    onLevel: (Int) -> Unit,
+    onStageUp: (String) -> Unit
 ) {
-    val game = remember(stage, seed) { HexMineGame(stage, seed) }
-    var version by remember(stage, seed) { mutableStateOf(0) }
-    var flagMode by remember(stage, seed) { mutableStateOf(false) }
-    var startedAt by remember(stage, seed) { mutableStateOf<Double?>(null) }
-    var elapsedSeconds by remember(stage, seed) { mutableStateOf(0L) }
-    var scoreSubmitted by remember(stage, seed) { mutableStateOf(false) }
+    val seed = remember(gameInfo.name, stage.name, level) {
+        LevelSeed.of(gameInfo.name, stage.name, level)
+    }
+    var attempt by remember(gameInfo.name, stage.name, level) { mutableStateOf(0) }
+    val game = remember(stage, level, attempt) { HexMineGame(stage, seed) }
+    val session = rememberGameSession(username, gameInfo, stage.name, level, syncService)
+    val scope = rememberCoroutineScope()
+
+    var version by remember(stage, level, attempt) { mutableStateOf(0) }
+    var flagMode by remember(stage, level, attempt) { mutableStateOf(false) }
+    var startedAt by remember(stage, level, attempt) { mutableStateOf<Double?>(null) }
+    var elapsedSeconds by remember(stage, level, attempt) { mutableStateOf(0L) }
+    var submitted by remember(stage, level, attempt) { mutableStateOf(false) }
 
     fun updateElapsed() {
         val start = startedAt ?: return
@@ -67,7 +73,17 @@ fun HexMineView(
         version++
     }
 
-    LaunchedEffect(stage, seed) {
+    fun restart() {
+        session.restart()
+        attempt++
+        version = 0
+        flagMode = false
+        startedAt = null
+        elapsedSeconds = 0
+        submitted = false
+    }
+
+    LaunchedEffect(stage, level, attempt) {
         while (true) {
             delay(250)
             if (startedAt != null && !game.isOver) {
@@ -76,94 +92,92 @@ fun HexMineView(
         }
     }
 
-    LaunchedEffect(game.status) {
-        if (game.status == MinesweeperStatus.Won && !scoreSubmitted) {
-            scoreSubmitted = true
-            syncService.recordAndPushScore(
-                Score(
-                    username = username,
-                    gameName = "hexmine",
-                    stage = stage.name,
-                    levelId = seed.toString(),
-                    time = elapsedSeconds,
-                    points = game.points
-                )
-            )
+    LaunchedEffect(game) {
+        if (submitted) return@LaunchedEffect
+        when (game.status) {
+            MinesweeperStatus.Won -> {
+                submitted = true
+                updateElapsed()
+                session.recordWin(scope, time = elapsedSeconds, points = game.points)
+            }
+
+            MinesweeperStatus.Lost -> {
+                submitted = true
+                updateElapsed()
+                session.recordLoss(scope, time = elapsedSeconds, points = game.points)
+            }
+
+            MinesweeperStatus.InProgress -> Unit
         }
     }
 
-    Div({ style { lollipopCard() } }) {
-        H2({ style { lollipopHeading() } }) {
-            Text("HexMine · ${stage.name}")
+    GameShell(
+        title = gameInfo.displayName,
+        level = level,
+        statusPills = listOf(
+            "Mines: ${game.minesRemaining}",
+            "Time: ${elapsedSeconds}s",
+            "Points: ${game.points}"
+        ),
+        message = when (game.status) {
+            MinesweeperStatus.Won -> "You cleared the hive!"
+            MinesweeperStatus.Lost -> "Boom! You hit a mine."
+            MinesweeperStatus.InProgress -> "Tap a hex to reveal. Right-click or use flag mode to flag."
+        },
+        onHome = onHome,
+        onLevel = onLevel,
+        onRestart = { restart() },
+        onHighscore = { session.openHighscore(scope) },
+        extraControls = {
+            IconButton(
+                icon = GameIcon.Flag,
+                onClick = { flagMode = !flagMode },
+                active = flagMode
+            )
+        }
+    ) {
+        if (session.celebrating) {
+            WinConfetti(seed = level.toLong())
         }
 
-        Div({ style { minesweeperStatusBar(version) } }) {
-            Span({ style { lollipopPill() } }) { Text("Mines: ${game.minesRemaining}") }
-            Span({ style { lollipopPill() } }) { Text("Time: ${elapsedSeconds}s") }
-            Span({ style { lollipopPill() } }) { Text("Points: ${game.points}") }
-        }
-
-        key(version) {
-            P({ style { lollipopParagraph() } }) {
-                Text(
-                    when (game.status) {
-                        MinesweeperStatus.Won -> "You cleared the hive!"
-                        MinesweeperStatus.Lost -> "Boom! You hit a mine."
-                        MinesweeperStatus.InProgress -> "Tap a hex to reveal. Right-click or use flag mode to flag."
-                    }
-                )
-            }
-
-            Div({ style { hexMineBoardScroller() } }) {
-                Div({ style { hexMineBoard(stage.width) } }) {
-                    for (y in 0 until stage.height) {
-                        Div({ style { hexMineRow(y) } }) {
-                            for (x in 0 until stage.width) {
-                                val cell = game.cellAt(x, y)
-                                Div({
-                                    style { hexMineCell(cell, game.status) }
-                                    onClick {
-                                        if (flagMode) handleFlag(x, y) else handleReveal(x, y)
-                                    }
-                                    onContextMenu {
-                                        it.preventDefault()
-                                        handleFlag(x, y)
-                                    }
-                                }) {
-                                    Text(hexMineCellLabel(cell))
+        Div({ style { hexMineBoardScroller() } }) {
+            Div({ style { hexMineBoard(stage.width) } }) {
+                for (y in 0 until stage.height) {
+                    Div({ style { hexMineRow(y) } }) {
+                        for (x in 0 until stage.width) {
+                            val cell = game.cellAt(x, y)
+                            Div({
+                                style { hexMineCell(cell, game.status) }
+                                onClick {
+                                    if (flagMode) handleFlag(x, y) else handleReveal(x, y)
                                 }
+                                onContextMenu {
+                                    it.preventDefault()
+                                    handleFlag(x, y)
+                                }
+                            }) {
+                                Text(hexMineCellLabel(cell))
                             }
                         }
                     }
                 }
             }
+        }
 
-            P({ style { minesweeperHint() } }) {
-                Text("Seed: $seed · Hex grid: ${stage.width}x${stage.height} with ${stage.mines} mines")
-            }
-
-            Div({ style { minesweeperControls() } }) {
-                Button({
-                    style { if (flagMode) lollipopButton() else lollipopButtonSecondary() }
-                    onClick { flagMode = !flagMode }
-                }) {
-                    Text(if (flagMode) "Flag mode: ON" else "Flag mode: OFF")
-                }
-                Button({
-                    style { lollipopButtonSecondary() }
-                    onClick { onNewGame(Random.nextLong()) }
-                }) {
-                    Text("New Game")
-                }
-                Button({
-                    style { lollipopButtonSecondary() }
-                    onClick { onBack() }
-                }) {
-                    Text("Back to Home")
-                }
-            }
+        P({ style { minesweeperHint() } }) {
+            Text(
+                "Level $level · hex grid ${stage.width}x${stage.height} with ${stage.mines} mines · seed $seed"
+            )
         }
     }
+
+    GameSessionDialogs(
+        session = session,
+        gameTitle = gameInfo.displayName,
+        stageLabel = stageLabelOf(gameInfo, stage.name),
+        onNextLevel = { onLevel(level + 1) },
+        onStageUp = onStageUp
+    )
 }
 
 private fun hexMineCellLabel(cell: HexMineCell): String = when {

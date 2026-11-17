@@ -7,23 +7,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import de.nielsfalk.game.suite.common.Score
+import de.nielsfalk.game.suite.common.LevelSeed
 import de.nielsfalk.game.suite.common.ScoreSyncService
+import de.nielsfalk.game.suite.common.SuiteGame
+import de.nielsfalk.game.suite.navigation.GameIcon
+import de.nielsfalk.game.suite.navigation.GameSessionDialogs
+import de.nielsfalk.game.suite.navigation.GameShell
+import de.nielsfalk.game.suite.navigation.IconButton
+import de.nielsfalk.game.suite.navigation.WinConfetti
+import de.nielsfalk.game.suite.navigation.rememberGameSession
+import de.nielsfalk.game.suite.navigation.LollipopTheme
+import de.nielsfalk.game.suite.navigation.stageLabelOf
+import de.nielsfalk.game.suite.navigation.lollipopPill
 import de.nielsfalk.game.suite.navigation.lollipopButton
 import de.nielsfalk.game.suite.navigation.lollipopButtonSecondary
 import de.nielsfalk.game.suite.navigation.lollipopCard
 import de.nielsfalk.game.suite.navigation.lollipopHeading
 import de.nielsfalk.game.suite.navigation.lollipopParagraph
-import de.nielsfalk.game.suite.navigation.lollipopPill
+import org.jetbrains.compose.web.css.StyleScope
 import kotlinx.browser.window
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H2
-import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -34,25 +41,33 @@ import kotlin.js.Date
 import kotlin.math.abs
 import kotlin.random.Random
 
+/** Hexlaser of one numbered level, seeded by the level number. */
 @Composable
 fun HexlaserView(
     username: String,
+    gameInfo: SuiteGame,
     stageType: StageType,
-    seed: Long,
+    level: Int,
     syncService: ScoreSyncService,
-    onBack: () -> Unit,
-    onNewGame: (Long) -> Unit,
-    onStageChange: (StageType, Long) -> Unit
+    onHome: () -> Unit,
+    onLevel: (Int) -> Unit,
+    onStageUp: (String) -> Unit
 ) {
-    val game = remember(stageType, seed) { HexlasarGame(stageType, seed) }
+    val seed = remember(gameInfo.name, stageType.wireName, level) {
+        LevelSeed.of(gameInfo.name, stageType.wireName, level)
+    }
+    var attempt by remember(gameInfo.name, stageType.wireName, level) { mutableStateOf(0) }
+    val game = remember(stageType, seed, attempt) { HexlasarGame(stageType, seed) }
+    val session = rememberGameSession(username, gameInfo, stageType.wireName, level, syncService)
     val scope = rememberCoroutineScope()
-    var version by remember(stageType, seed) { mutableStateOf(0) }
-    var canvasElement by remember(stageType, seed) { mutableStateOf<HTMLCanvasElement?>(null) }
-    var ongoingDrag by remember(stageType, seed) { mutableStateOf<Pair<Position, Double>?>(null) }
-    var startedAt by remember(stageType, seed) { mutableStateOf<Double?>(null) }
-    var elapsedSeconds by remember(stageType, seed) { mutableStateOf(0L) }
-    var scoreSubmitted by remember(stageType, seed) { mutableStateOf(false) }
-    val rotationJob = remember(stageType, seed) { mutableStateOf<Job?>(null) }
+
+    var version by remember(stageType, level, attempt) { mutableStateOf(0) }
+    var canvasElement by remember(stageType, level, attempt) { mutableStateOf<HTMLCanvasElement?>(null) }
+    var ongoingDrag by remember(stageType, level, attempt) { mutableStateOf<Pair<Position, Double>?>(null) }
+    var startedAt by remember(stageType, level, attempt) { mutableStateOf<Double?>(null) }
+    var elapsedSeconds by remember(stageType, level, attempt) { mutableStateOf(0L) }
+    var submitted by remember(stageType, level, attempt) { mutableStateOf(false) }
+    val rotationJob = remember(stageType, level, attempt) { mutableStateOf<Job?>(null) }
 
     fun beginIfNeeded() {
         if (startedAt == null) startedAt = Date.now()
@@ -63,7 +78,7 @@ fun HexlaserView(
 
     suspend fun animateWinning() {
         var spent = 0
-        while (spent <= winningAnimationDuration) {
+        while (spent <= 3000) {
             game.setAnimationSpendTime(spent)
             version++
             delay(16)
@@ -73,37 +88,15 @@ fun HexlaserView(
         version++
     }
 
-    fun submitIfSolved() {
-        if (!game.solved || scoreSubmitted) return
-        scoreSubmitted = true
-        elapsedSeconds = currentElapsed()
-        scope.launch {
-            syncService.recordAndPushScore(
-                Score(
-                    username = username,
-                    gameName = "hexlaser",
-                    stage = game.stageType.wireName,
-                    levelId = game.seed.toString(),
-                    time = elapsedSeconds,
-                    points = game.points
-                )
-            )
-        }
-        scope.launch {
-            animateWinning()
-        }
-    }
-
     suspend fun animateRotation(position: Position, rotations: Int) {
         val cell = game.grid[position]
         if (cell.locked || rotations == 0) return
-
         beginIfNeeded()
         val steps = 8
         repeat(steps) { step ->
             game.setRotatedParts(
                 position,
-                rotations * rotationSpeed * (step + 1) / steps
+                rotations * 60 * (step + 1) / steps
             )
             version++
             delay(18)
@@ -111,7 +104,14 @@ fun HexlaserView(
         game.setRotatedParts(position, 0)
         game.rotate(position, rotations)
         version++
-        submitIfSolved()
+        if (!submitted && game.solved) {
+            submitted = true
+            elapsedSeconds = currentElapsed()
+            scope.launch {
+                animateWinning()
+                session.recordWin(scope, time = elapsedSeconds, points = game.points)
+            }
+        }
     }
 
     fun startRotation(position: Position, rotations: Int) {
@@ -121,29 +121,39 @@ fun HexlaserView(
         }
     }
 
-    fun resetSession() {
-        startedAt = null
-        elapsedSeconds = 0
-        scoreSubmitted = false
-        version++
-    }
-
     fun handleHint() {
         if (rotationJob.value?.isActive == true || game.solvedAndLocked) return
         beginIfNeeded()
         game.requestHint()
         version++
-        submitIfSolved()
+        if (!submitted && game.solved) {
+            submitted = true
+            elapsedSeconds = currentElapsed()
+            scope.launch {
+                animateWinning()
+                session.recordWin(scope, time = elapsedSeconds, points = game.points)
+            }
+        }
     }
 
-    LaunchedEffect(game, stageType, seed) {
+    fun restart() {
+        session.restart()
+        attempt++
+        version = 0
+        startedAt = null
+        elapsedSeconds = 0
+        submitted = false
+        game.retry()
+    }
+
+    LaunchedEffect(game, stageType, level, attempt) {
         while (true) {
-            delay(glowSpeed.toLong())
+            delay(14L)
             if (game.followGlow()) version++
         }
     }
 
-    LaunchedEffect(game, stageType, seed) {
+    LaunchedEffect(game, stageType, level, attempt) {
         while (true) {
             delay(250)
             if (startedAt != null) {
@@ -152,7 +162,7 @@ fun HexlaserView(
         }
     }
 
-    LaunchedEffect(game, stageType, seed, version, ongoingDrag, canvasElement) {
+    LaunchedEffect(game, stageType, level, attempt, version, ongoingDrag, canvasElement) {
         val canvas = canvasElement ?: return@LaunchedEffect
         val width = canvas.clientWidth.toDouble()
         val height = canvas.clientHeight.toDouble()
@@ -174,27 +184,36 @@ fun HexlaserView(
         }
     }
 
-    Div({ style { lollipopCard() } }) {
-        H2({ style { lollipopHeading() } }) {
-            Text("Hexlaser · ${game.stageType.name.replace('_', ' ')}")
-        }
-
-        Div({ style { hexlaserStatusBar() } }) {
-            Span({ style { lollipopPill() } }) { Text("Stage: ${game.stageType.wireName}") }
-            Span({ style { lollipopPill() } }) { Text("Seed: ${game.seed}") }
-            Span({ style { lollipopPill() } }) { Text("Moves: ${game.performedRotations}") }
-            Span({ style { lollipopPill() } }) { Text("Time: ${elapsedSeconds}s") }
-            Span({ style { lollipopPill() } }) { Text("Points: ${game.points}") }
-        }
-
-        P({ style { lollipopParagraph() } }) {
-            Text(
-                when {
-                    game.solvedAndLocked -> "Solved! Tap the board or press Next."
-                    game.stageUpVisible -> "Three solves complete."
-                    else -> "Tap to rotate, drag vertically to spin, long-press to lock a cell."
-                }
+    GameShell(
+        title = gameInfo.displayName,
+        level = level,
+        statusPills = listOf(
+            "Moves: ${game.performedRotations}",
+            "Time: ${elapsedSeconds}s",
+            "Points: ${game.points}"
+        ),
+        message = when {
+            game.solvedAndLocked -> "Solved! Tap the board or press forward to continue."
+            session.celebrating -> "Level solved!"
+            else -> "Tap to rotate, drag vertically to spin, long-press to lock a cell."
+        },
+        onHome = onHome,
+        onLevel = onLevel,
+        onRestart = { restart() },
+        onHighscore = { session.openHighscore(scope) },
+        extraControls = {
+            IconButton(
+                icon = GameIcon.Hint,
+                onClick = { handleHint() },
+                enabled = game.hintCount > 0 || !game.solvedAndLocked
             )
+            Span({ style { hexlaserHintBadge() } }) {
+                Text("${game.hintCount}")
+            }
+        }
+    ) {
+        if (session.celebrating) {
+            WinConfetti(seed = level.toLong())
         }
 
         Canvas(attrs = {
@@ -308,7 +327,7 @@ fun HexlaserView(
 
                         if (position != null && !wasLongPress) {
                             if (game.solvedAndLocked) {
-                                onNewGame(Random.nextLong())
+                                onLevel(level + 1)
                             } else if (wasMoved && abs(degrees) >= 30.0) {
                                 var positiveDegrees = degrees
                                 while (positiveDegrees < 0) positiveDegrees += 360.0
@@ -349,71 +368,29 @@ fun HexlaserView(
             }
         })
 
-        Div({ style { hexlaserControls() } }) {
-            Button({
-                style { lollipopButtonSecondary() }
-                onClick {
-                    onStageChange(game.stageType.next(), Random.nextLong())
-                }
-            }) {
-                Text("Next Stage")
-            }
-            Button({
-                style { lollipopButtonSecondary() }
-                onClick { onNewGame(Random.nextLong()) }
-            }) {
-                Text("Next Grid")
-            }
-            Button({
-                style { lollipopButtonSecondary() }
-                onClick {
-                    game.retry()
-                    resetSession()
-                }
-            }) {
-                Text("Retry")
-            }
-            Button({
-                style { lollipopButton() }
-                onClick { handleHint() }
-            }) {
-                Text("Hint (${game.hintCount})")
-            }
-            Button({
-                style { lollipopButtonSecondary() }
-                onClick { onBack() }
-            }) {
-                Text("Back to Home")
-            }
+        P({ style { hexlaserHint() } }) {
+            Text("Level $level · seed $seed · ${game.stageType.name.replace('_', ' ')}")
         }
     }
 
-    if (game.stageUpVisible) {
-        Div({ style { hexlaserDialogBackdrop() } }) {
-            Div({ style { hexlaserDialog() } }) {
-                H3({ style { lollipopHeading() } }) { Text("Stage up!") }
-                P({ style { lollipopParagraph() } }) {
-                    Text("Three solves in a row. Ready for the next stage?")
-                }
-                Div({ style { hexlaserControls() } }) {
-                    Button({
-                        style { lollipopButton() }
-                        onClick {
-                            onStageChange(game.stageType.next(), Random.nextLong())
-                        }
-                    }) {
-                        Text("Stage up")
-                    }
-                    Button({
-                        style { lollipopButtonSecondary() }
-                        onClick { onNewGame(Random.nextLong()) }
-                    }) {
-                        Text("Continue")
-                    }
-                }
-            }
-        }
-    }
+    GameSessionDialogs(
+        session = session,
+        gameTitle = gameInfo.displayName,
+        stageLabel = stageLabelOf(gameInfo, stageType.wireName),
+        onNextLevel = { onLevel(level + 1) },
+        onStageUp = onStageUp
+    )
 }
 
-private const val winningAnimationDuration = 3000
+private fun StyleScope.hexlaserHintBadge() {
+    property("display", "inline-flex")
+    property("align-items", "center")
+    property("justify-content", "center")
+    property("min-width", "1.6rem")
+    property("height", "1.6rem")
+    property("background", "linear-gradient(135deg, ${LollipopTheme.violet}, ${LollipopTheme.primary})")
+    property("color", LollipopTheme.text)
+    property("border-radius", "999px")
+    property("font-size", "0.85rem")
+    property("font-weight", LollipopTheme.fontWeightTitle)
+}
