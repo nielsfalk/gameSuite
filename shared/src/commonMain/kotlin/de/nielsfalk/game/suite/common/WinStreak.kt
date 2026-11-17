@@ -27,7 +27,7 @@ class WinStreak(val winsRequired: Int = DEFAULT_WINS_REQUIRED) {
         return true
     }
 
-    /** Resets the streak after a loss. */
+    /** Resets the streak after a loss. No score is posted — only wins are recorded. */
     fun recordLoss() {
         consecutiveWins = 0
     }

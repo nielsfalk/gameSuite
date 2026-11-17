@@ -9,9 +9,9 @@ interface GameStage {
 /**
  * One submitted result of one level.
  *
+ * Scores are only posted when the level is won (cleared), so every stored score represents a win.
  * [levelId] holds the level number as text, so that legacy rows written with random ids stay readable
- * and can be ignored explicitly. [won] separates cleared levels from lost attempts: highscores only
- * rank won levels, while the user summary counts both.
+ * and can be ignored explicitly.
  */
 @Serializable
 data class Score(
@@ -20,8 +20,7 @@ data class Score(
     val stage: String,
     val levelId: String,
     val time: Long,
-    val points: Long,
-    val won: Boolean = true
+    val points: Long
 ) {
     /** The level number, or `null` for legacy rows that stored a random id. */
     val level: Int? get() = levelId.toIntOrNull()?.takeIf { it >= LevelSeed.FIRST_LEVEL }
@@ -37,17 +36,15 @@ data class HighscoreSummary(
     val highestScore: Long? = null
 )
 
-/** Aggregated results of one user for one game and stage. */
+/** Aggregated results of one user for one game and stage. Every stored score is a win. */
 @Serializable
 data class GameStageSummary(
     val gameName: String,
     val stage: String,
     val levelsPlayed: Int = 0,
-    val levelsWon: Int = 0,
     val bestPoints: Long? = null,
     val totalPoints: Long = 0,
-    val highestLevelPlayed: Int? = null,
-    val highestLevelWon: Int? = null
+    val highestLevelPlayed: Int? = null
 )
 
 /** Aggregated results of one user across all games and stages. */

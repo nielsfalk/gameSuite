@@ -69,8 +69,7 @@ class ScoreSyncService(
             withTimeoutOrNull(ServerConfig.REQUEST_TIMEOUT_MILLIS) {
                 val payload = json(
                     "time" to score.time,
-                    "points" to score.points,
-                    "won" to score.won
+                    "points" to score.points
                 )
                 val url = "$serverBaseUrl/${score.username}/${score.gameName}/${score.stage}/${score.levelId}"
                 val response = window.fetch(

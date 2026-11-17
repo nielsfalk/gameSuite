@@ -1,7 +1,7 @@
 package de.nielsfalk.game.suite.common
 
 /**
- * Pure, platform independent aggregations over scores.
+ * Pure, platform independent aggregations over scores. Every stored score is a win.
  *
  * The server uses these functions for its summary endpoint, the PWA uses them to build the same
  * aggregates from locally cached scores when the server is unreachable.
@@ -14,7 +14,7 @@ object ScoreSummary {
     /** Whether [score] belongs to a numbered level. Legacy rows with random ids are ignored. */
     fun isNumberedLevel(score: Score): Boolean = score.level != null
 
-    /** Builds a level highscore from any score list, keeping only won levels. */
+    /** Builds a level highscore from any score list. */
     fun levelHighscore(
         scores: List<Score>,
         gameName: String,
@@ -29,14 +29,14 @@ object ScoreSummary {
                 isNumberedLevel(it) &&
                 it.level == level
         }
-        val won = all.filter { it.won }.sortedWith(highscoreOrder)
+        val ranked = all.sortedWith(highscoreOrder)
         return HighscoreSummary(
             gameName = gameName,
             stage = stage,
             levelId = levelId,
-            topScores = won.take(limit),
+            topScores = ranked.take(limit),
             totalPlays = all.size.toLong(),
-            highestScore = won.firstOrNull()?.points
+            highestScore = ranked.firstOrNull()?.points
         )
     }
 
@@ -46,16 +46,13 @@ object ScoreSummary {
             .groupBy { it.gameName to it.stage }
             .map { (gameAndStage, grouped) ->
                 val (gameName, stage) = gameAndStage
-                val won = grouped.filter { it.won }
                 GameStageSummary(
                     gameName = gameName,
                     stage = stage,
                     levelsPlayed = grouped.mapNotNull { it.level }.distinct().size,
-                    levelsWon = won.mapNotNull { it.level }.distinct().size,
-                    bestPoints = won.maxOfOrNull { it.points },
+                    bestPoints = grouped.maxOfOrNull { it.points },
                     totalPoints = grouped.sumOf { it.points },
-                    highestLevelPlayed = grouped.mapNotNull { it.level }.maxOrNull(),
-                    highestLevelWon = won.mapNotNull { it.level }.maxOrNull()
+                    highestLevelPlayed = grouped.mapNotNull { it.level }.maxOrNull()
                 )
             }
             .sortedWith(compareBy({ it.gameName }, { it.stage }))

@@ -86,7 +86,7 @@ class ServerSmokeTest : FreeSpec({
             }
         }
 
-        "should rank the level highscore by points then time and ignore losses" {
+        "should rank the level highscore by points then time" {
             testApplication {
                 application { module() }
                 val jsonClient = createClient {
@@ -94,16 +94,14 @@ class ServerSmokeTest : FreeSpec({
                 }
 
                 val submissions = listOf(
-                    Triple("slow", 100L, 30L to true),
-                    Triple("fast", 100L, 10L to true),
-                    Triple("best", 250L, 99L to true),
-                    Triple("lost", 999L, 1L to false)
+                    Triple("slow", 100L, 30L),
+                    Triple("fast", 100L, 10L),
+                    Triple("best", 250L, 99L)
                 )
-                submissions.forEach { (player, points, attempt) ->
-                    val (time, won) = attempt
+                submissions.forEach { (player, points, time) ->
                     val response = jsonClient.post("/$player/minesweeper/easy/7") {
                         contentType(ContentType.Application.Json)
-                        setBody(ScoreSubmission(time = time, points = points, won = won))
+                        setBody(ScoreSubmission(time = time, points = points))
                     }
                     assert(response.status == HttpStatusCode.Created)
                 }
@@ -111,7 +109,7 @@ class ServerSmokeTest : FreeSpec({
                 val summary: HighscoreSummary = jsonClient.get("/highscores/minesweeper/easy/7").body()
                 assert(summary.topScores.map { it.username } == listOf("best", "fast", "slow"))
                 assert(summary.highestScore == 250L)
-                assert(summary.totalPlays == 4L)
+                assert(summary.totalPlays == 3L)
             }
         }
 
@@ -143,8 +141,6 @@ class ServerSmokeTest : FreeSpec({
                 val minesweeper = summary.entries.first { it.gameName == "minesweeper" }
                 assert(minesweeper.stage == "easy")
                 assert(minesweeper.levelsPlayed == 2)
-                assert(minesweeper.levelsWon == 2)
-                assert(minesweeper.bestPoints == 300L)
                 assert(minesweeper.totalPoints == 400L)
                 assert(minesweeper.highestLevelPlayed == 2)
             }

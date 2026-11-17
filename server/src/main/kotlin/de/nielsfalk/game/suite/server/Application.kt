@@ -28,8 +28,7 @@ import kotlinx.serialization.json.Json
 @Serializable
 data class ScoreSubmission(
     val time: Long,
-    val points: Long,
-    val won: Boolean = true
+    val points: Long
 )
 
 private suspend fun ApplicationCall.rejectUnknownGameOrStage(gameName: String, stage: String): Boolean {
@@ -147,8 +146,7 @@ fun Application.module(repository: ScoreRepository = ScoreRepository()) {
                 stage = stage,
                 levelId = level,
                 time = submission.time,
-                points = submission.points,
-                won = submission.won
+                points = submission.points
             )
             val saved = repository.saveScore(score)
             call.respond(HttpStatusCode.Created, saved)

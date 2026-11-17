@@ -8,17 +8,8 @@ private fun score(
     stage: String = "easy",
     level: String = "1",
     time: Long = 10,
-    points: Long = 100,
-    won: Boolean = true
-) = Score(
-    username = username,
-    gameName = gameName,
-    stage = stage,
-    levelId = level,
-    time = time,
-    points = points,
-    won = won
-)
+    points: Long = 100
+) = Score(username, gameName, stage, level, time, points)
 
 class ScoreSummaryTest : FreeSpec({
     "ScoreSummary" - {
@@ -52,11 +43,10 @@ class ScoreSummaryTest : FreeSpec({
             assert(summary.totalPlays == 15L)
         }
 
-        "excludes lost attempts and other levels, stages and games" {
+        "excludes other levels, stages and games" {
             val summary = ScoreSummary.levelHighscore(
                 scores = listOf(
                     score(username = "winner", points = 10),
-                    score(username = "loser", points = 999, won = false),
                     score(username = "wrongLevel", level = "2", points = 500),
                     score(username = "wrongStage", stage = "expert", points = 500),
                     score(username = "wrongGame", gameName = "hexmine", points = 500)
@@ -67,14 +57,14 @@ class ScoreSummaryTest : FreeSpec({
             )
 
             assert(summary.topScores.map { it.username } == listOf("winner"))
-            assert(summary.totalPlays == 2L)
+            assert(summary.totalPlays == 1L)
             assert(summary.highestScore == 10L)
         }
 
         "ignores legacy scores with random level ids" {
             val summary = ScoreSummary.levelHighscore(
                 scores = listOf(
-                    score(username = "legacy", level = "123456789"),
+                    score(username = "legacy", level = "1234567890123456789"),
                     score(username = "legacy2", level = "abc"),
                     score(username = "modern", level = "1")
                 ),
@@ -92,8 +82,8 @@ class ScoreSummaryTest : FreeSpec({
                 listOf(
                     score(level = "1", points = 100),
                     score(level = "2", points = 300),
-                    score(level = "2", points = 50, won = false),
-                    score(level = "3", points = 500, won = false),
+                    score(level = "2", points = 50),
+                    score(level = "3", points = 500),
                     score(gameName = "hexmine", stage = "beginner", level = "1", points = 20)
                 )
             )
@@ -101,19 +91,14 @@ class ScoreSummaryTest : FreeSpec({
             assert(summary.size == 2)
             val minesweeper = summary.first { it.gameName == "minesweeper" && it.stage == "easy" }
             assert(minesweeper.levelsPlayed == 3)
-            assert(minesweeper.levelsWon == 2)
-            assert(minesweeper.bestPoints == 300L)
+            assert(minesweeper.bestPoints == 500L)
             assert(minesweeper.totalPoints == 950L)
             assert(minesweeper.highestLevelPlayed == 3)
-            assert(minesweeper.highestLevelWon == 2)
         }
 
-        "returns empty aggregates without won levels" {
-            val summary = ScoreSummary.summarize(listOf(score(won = false)))
-            assert(summary.size == 1)
-            assert(summary.single().levelsWon == 0)
-            assert(summary.single().bestPoints == null)
-            assert(summary.single().highestLevelWon == null)
+        "returns empty aggregates without any scores" {
+            val summary = ScoreSummary.summarize(emptyList())
+            assert(summary.isEmpty())
         }
 
         "summarizes one user and ignores legacy ids" {

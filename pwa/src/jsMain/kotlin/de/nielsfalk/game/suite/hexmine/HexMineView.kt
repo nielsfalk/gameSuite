@@ -92,7 +92,7 @@ fun HexMineView(
         }
     }
 
-    LaunchedEffect(game) {
+    LaunchedEffect(version) {
         if (submitted) return@LaunchedEffect
         when (game.status) {
             MinesweeperStatus.Won -> {
@@ -104,7 +104,7 @@ fun HexMineView(
             MinesweeperStatus.Lost -> {
                 submitted = true
                 updateElapsed()
-                session.recordLoss(scope, time = elapsedSeconds, points = game.points)
+                session.recordLoss()
             }
 
             MinesweeperStatus.InProgress -> Unit

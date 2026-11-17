@@ -12,7 +12,7 @@ data class LevelHighscore(
     val totalPlays: Long = 0,
     val online: Boolean = false
 ) {
-    /** The best entry of [username], or `null` when the player has no won attempt yet. */
+    /** The best entry of [username], or `null` when the player has no attempt yet. */
     fun bestOf(username: String): Score? =
         entries.filter { it.username == username }.minWithOrNull(ScoreSummary.highscoreOrder)
 
@@ -54,7 +54,7 @@ data class LevelHighscore(
     }
 }
 
-/** The user summary shown under the game logos. */
+/** The user summary shown under the game logos. Every stored score is a win. */
 data class UserSummaryView(
     val username: String,
     val entries: List<GameStageSummary>,

@@ -217,7 +217,14 @@ class GameSession(
         points: Long,
         celebrateMillis: Long = WIN_ANIMATION_MILLIS
     ) {
-        val score = score(won = true, time = time, points = points)
+        val score = Score(
+            username = username,
+            gameName = game.name,
+            stage = stage,
+            levelId = LevelSeed.format(level),
+            time = time,
+            points = points
+        )
         syncService.saveLocally(score)
         scope.launch { syncService.pushScore(score) }
         scope.launch {
@@ -233,12 +240,9 @@ class GameSession(
         }
     }
 
-    /** Called by the game when the level is lost. */
-    fun recordLoss(scope: CoroutineScope, time: Long, points: Long) {
+    /** Called when the player loses (minesweeper/hexmine). Only resets the streak. */
+    fun recordLoss() {
         streak.recordLoss()
-        val score = score(won = false, time = time, points = points)
-        syncService.saveLocally(score)
-        scope.launch { syncService.pushScore(score) }
     }
 
     /** Called when the player restarts the current level. */
@@ -265,17 +269,6 @@ class GameSession(
     fun dismissStageUp() {
         stageUpOpen = false
     }
-
-    private fun score(won: Boolean, time: Long, points: Long): Score =
-        Score(
-            username = username,
-            gameName = game.name,
-            stage = stage,
-            levelId = LevelSeed.format(level),
-            time = time,
-            points = points,
-            won = won
-        )
 }
 
 /** Confetti burst that plays while a level is celebrated. */

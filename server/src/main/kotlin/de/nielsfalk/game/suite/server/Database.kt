@@ -23,17 +23,12 @@ object ScoresTable : Table("scores") {
     val levelId = varchar("level_id", 100)
     val time = long("time")
     val points = long("points")
-    val won = bool("won").default(true)
 
     override val primaryKey = PrimaryKey(id)
 }
 
 data class JdbcConfig(val url: String, val user: String, val password: String)
 
-/**
- * Converts a libpq-style URL (`postgresql://user:password@host/db?sslmode=require`, as provided by Neon in
- * `DATABASE_URL`) into a JDBC URL plus separate credentials. Only `sslmode` is kept as a query parameter.
- */
 fun postgresUrlToJdbc(databaseUrl: String): JdbcConfig {
     val uri = java.net.URI(databaseUrl)
     require(uri.scheme == "postgresql" || uri.scheme == "postgres") { "Unsupported scheme: ${uri.scheme}" }
@@ -87,8 +82,7 @@ private fun ResultRow.toScore(): Score = Score(
     stage = this[ScoresTable.stage],
     levelId = this[ScoresTable.levelId],
     time = this[ScoresTable.time],
-    points = this[ScoresTable.points],
-    won = this[ScoresTable.won]
+    points = this[ScoresTable.points]
 )
 
 class ScoreRepository {
@@ -100,7 +94,6 @@ class ScoreRepository {
             it[levelId] = score.levelId
             it[time] = score.time
             it[points] = score.points
-            it[won] = score.won
         }
         score
     }
@@ -122,10 +115,7 @@ class ScoreRepository {
             .sortedWith(ScoreSummary.highscoreOrder)
     }
 
-    /**
-     * The level highscore: the top [limit] won attempts ranked by points and time plus the number of
-     * attempts (won or lost) on that level.
-     */
+    /** The level highscore: the top [limit] ranked by points and time, plus the number of attempts. */
     suspend fun getHighscores(
         gameName: String,
         stage: String,
@@ -139,26 +129,24 @@ class ScoreRepository {
                     (ScoresTable.levelId eq level)
             }
             .map { it.toScore() }
-        val won = all.filter { it.won }.sortedWith(ScoreSummary.highscoreOrder)
+            .sortedWith(ScoreSummary.highscoreOrder)
 
         HighscoreSummary(
             gameName = gameName,
             stage = stage,
             levelId = level,
-            topScores = won.take(limit),
+            topScores = all.take(limit),
             totalPlays = all.size.toLong(),
-            highestScore = won.firstOrNull()?.points
+            highestScore = all.firstOrNull()?.points
         )
     }
 
-    /** All scores of one user, used to build the summary endpoint. */
     suspend fun getScoresOfUser(username: String): List<Score> = DatabaseFactory.dbQuery {
         ScoresTable.selectAll()
             .where { ScoresTable.username eq username }
             .map { it.toScore() }
     }
 
-    /** Per game and stage aggregates of one user. */
     suspend fun getSummary(username: String): UserSummary =
         ScoreSummary.summarizeUser(username, getScoresOfUser(username))
 }
