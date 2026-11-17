@@ -23,7 +23,6 @@ import kotlinx.browser.window
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.attributes.selected
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H1
@@ -31,9 +30,7 @@ import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Li
-import org.jetbrains.compose.web.dom.Option
 import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.Ul
@@ -299,7 +296,7 @@ private fun UserSummaryPanel(
                 Text("$displayGame · $stageLabel")
             }
             Div({ style { lollipopMutedText() } }) {
-                Text("${entry.levelsWon}/${entry.levelsPlayed} levels won · ")
+                Text("${entry.levelsPlayed} level(s) · ")
             }
             Span({ style { lollipopPill() } }) { Text("Best: ${entry.bestPoints ?: "—"}") }
             Span({ style { lollipopPill() } }) { Text("Total: ${entry.totalPoints}") }
@@ -332,28 +329,19 @@ private fun GameHomeView(
 
         P({ style { lollipopParagraph() } }) { Text("Choose a stage and start on level 1.") }
 
-        Div({ style { property("margin-bottom", "1rem") } }) {
-            Span({ style { lollipopPill() } }) { Text("Stage") }
-            Select({
-                style { lollipopInput() }
-                onChange { it.value?.let { stage -> selectedStage = stage } }
-            }) {
-                game.stages.forEach { stage ->
-                    Option(stage, attrs = {
-                        if (selectedStage == stage) selected()
-                    }) {
-                        Text(stageLabelOf(game, stage))
-                    }
-                }
-            }
-        }
-
         Div({ style { lollipopToolbar() } }) {
-            Button({
-                style { lollipopButton() }
-                onClick { onLaunch(selectedStage, LevelSeed.FIRST_LEVEL) }
-            }) {
-                Text("Start Level 1")
+            game.stages.forEach { stage ->
+                Button({
+                    style {
+                        lollipopStageButton(selected = selectedStage == stage)
+                    }
+                    onClick {
+                        selectedStage = stage
+                        onLaunch(stage, LevelSeed.FIRST_LEVEL)
+                    }
+                }) {
+                    Text(stageLabelOf(game, stage))
+                }
             }
         }
     }

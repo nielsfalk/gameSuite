@@ -143,6 +143,29 @@ fun StyleScope.lollipopPill() {
     property("margin", "0.15rem")
 }
 
+fun StyleScope.lollipopStageButton(selected: Boolean = false) {
+    property("display", "inline-flex")
+    property("align-items", "center")
+    property("justify-content", "center")
+    property("padding", "0.7rem 1.4rem")
+    property("border", "none")
+    property("border-radius", LollipopTheme.radiusPill)
+    property("font-family", LollipopTheme.fontFamily)
+    property("font-weight", LollipopTheme.fontWeightTitle)
+    property("font-size", "1.05rem")
+    property("cursor", "pointer")
+    property("transition", "transform .12s ease, filter .12s ease")
+    if (selected) {
+        property("background", "linear-gradient(135deg, ${LollipopTheme.accent} 0%, ${LollipopTheme.orange} 100%)")
+        property("color", LollipopTheme.background)
+        property("box-shadow", "${LollipopTheme.shadowPop}, 0 0 16px rgba(255,210,63,0.55)")
+    } else {
+        property("background", "linear-gradient(135deg, ${LollipopTheme.surfaceAlt} 0%, ${LollipopTheme.surface} 100%)")
+        property("color", LollipopTheme.secondary)
+        property("border", "2px solid rgba(77,208,255,0.25)")
+    }
+}
+
 fun StyleScope.lollipopScoreRow() {
     property("background", "linear-gradient(90deg, ${LollipopTheme.surfaceAlt} 0%, ${LollipopTheme.surface} 100%)")
     property("border-left", "4px solid ${LollipopTheme.primary}")
