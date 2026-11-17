@@ -1,0 +1,47 @@
+### Gamesuite server – IntelliJ HTTP Client requests
+### Requires the IntelliJ IDEA Built-In REST Client. Click the run icon next to a request.
+
+### Variables
+@host = https://gamesuite-server.onrender.com
+# Use this instead for the local server (`./gradlew :server:run`):
+# @host = http://localhost:8080
+@username = restclient
+@gameName = minesweeper
+@stage = easy
+@levelId = 1
+
+### Root
+GET {{host}}/
+
+### Health
+GET {{host}}/health
+
+### Get scores for a user
+GET {{host}}/{{username}}/{{gameName}}/{{stage}}/{{levelId}}
+
+### Post a score (no authentication required)
+POST {{host}}/{{username}}/{{gameName}}/{{stage}}/{{levelId}}
+Content-Type: application/json
+
+{
+  "time": 1500,
+  "points": 120
+}
+
+### Highscore summary (top 10 + total plays)
+GET {{host}}/highscores/{{gameName}}/{{stage}}/{{levelId}}
+
+### HexMine stage (same stage names as Minesweeper)
+GET {{host}}/highscores/hexmine/expert/1
+
+### Custom Minesweeper stage: custom-<width>x<height>-<mines>
+GET {{host}}/highscores/minesweeper/custom-12x12-24/1
+
+### Hexlaser stages: absolute_beginner, easy, intermediate, intermediate_plus, hard, harder, insane, nightmare, nightmare_plus
+GET {{host}}/highscores/hexlaser/easy/1
+
+### Rejected: unknown game -> 400
+GET {{host}}/highscores/notagame/easy/1
+
+### Rejected: unknown stage -> 400
+GET {{host}}/highscores/minesweeper/impossible/1
