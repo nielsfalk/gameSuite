@@ -68,8 +68,10 @@ class ScoreSyncService(
         try {
             withTimeoutOrNull(ServerConfig.REQUEST_TIMEOUT_MILLIS) {
                 val payload = js("({ time: 0, points: 0 })")
-                payload.time = score.time as Number
-                payload.points = score.points as Number
+                // Kotlin Longs are objects on JS, not numbers. JSON.stringify would serialize their
+                // internal fields (e.g. {"z_1":15,"a1_1":0}), so convert to JS numbers explicitly.
+                payload.time = score.time.toDouble()
+                payload.points = score.points.toDouble()
                 val url = "$serverBaseUrl/${score.username}/${score.gameName}/${score.stage}/${score.levelId}"
                 val response = window.fetch(
                     url,
